@@ -5,14 +5,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#0E1A2B",
-        "ink-raised": "#122238",
-        paper: "#EDEAE0",
-        "paper-dim": "#B9B6AC",
-        copper: "#C77B3B",
-        "copper-bright": "#E0975A",
-        pcb: "#4C8066",
-        grid: "rgba(237,234,224,0.08)",
+        // rgb(var(--x) / <alpha-value>) — Tailwind's pattern for letting
+        // CSS variables still support opacity modifiers like bg-ink/60,
+        // which this codebase uses extensively.
+        ink: "rgb(var(--color-ink) / <alpha-value>)",
+        "ink-raised": "rgb(var(--color-ink-raised) / <alpha-value>)",
+        paper: "rgb(var(--color-paper) / <alpha-value>)",
+        "paper-dim": "rgb(var(--color-paper-dim) / <alpha-value>)",
+        copper: "rgb(var(--color-copper) / <alpha-value>)",
+        "copper-bright": "rgb(var(--color-copper-bright) / <alpha-value>)",
+        pcb: "rgb(var(--color-pcb) / <alpha-value>)",
       },
       fontFamily: {
         display: ['"Space Grotesk"', "sans-serif"],
@@ -21,7 +23,7 @@ const config: Config = {
       },
       backgroundImage: {
         blueprint:
-          "linear-gradient(rgba(237,234,224,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(237,234,224,0.06) 1px, transparent 1px)",
+          "linear-gradient(rgb(var(--color-gridline) / 0.06) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--color-gridline) / 0.06) 1px, transparent 1px)",
       },
       backgroundSize: {
         blueprint: "32px 32px",

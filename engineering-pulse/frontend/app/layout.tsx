@@ -27,6 +27,20 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
+        {/* Runs before the page paints so there's no flash of the wrong
+            theme while React hydrates. Reads the saved choice, or falls
+            back to the visitor's OS-level light/dark preference. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                var saved = localStorage.getItem('theme');
+                var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+                if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+              })();
+            `,
+          }}
+        />
       </head>
       <body>{children}</body>
     </html>

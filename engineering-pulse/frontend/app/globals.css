@@ -2,9 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Dark theme (default) — blueprint navy with copper/PCB accents */
+  --color-ink: 14 26 43;
+  --color-ink-raised: 18 34 56;
+  --color-paper: 237 234 224;
+  --color-paper-dim: 185 182 172;
+  --color-copper: 199 123 59;
+  --color-copper-bright: 224 151 90;
+  --color-pcb: 76 128 102;
+  --color-gridline: 237 234 224;
+}
+
+[data-theme="light"] {
+  /* Light theme — same palette, inverted roles. Drafting-paper background
+     with the dark ink color doing double duty as the readable foreground
+     text, so every component using bg-ink/text-paper/etc. flips correctly
+     without any component code needing to change. */
+  --color-ink: 237 234 224;
+  --color-ink-raised: 247 245 238;
+  --color-paper: 20 30 46;
+  --color-paper-dim: 110 105 94;
+  --color-copper: 168 98 40;
+  --color-copper-bright: 140 78 30;
+  --color-pcb: 58 100 79;
+  --color-gridline: 14 26 43;
+}
+
 @layer base {
+  html {
+    color-scheme: dark;
+  }
+  html[data-theme="light"] {
+    color-scheme: light;
+  }
   body {
     @apply bg-ink text-paper font-body antialiased;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   ::selection {
     background: theme("colors.copper");
