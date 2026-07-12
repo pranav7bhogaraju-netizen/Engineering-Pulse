@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-ink text-paper font-body antialiased;
+  }
+  ::selection {
+    background: theme("colors.copper");
+    color: theme("colors.ink");
+  }
+}
+
+.crop-mark {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-color: theme("colors.paper-dim");
+}
+.crop-mark--tl { top: 0; left: 0; border-top: 1px solid; border-left: 1px solid; }
+.crop-mark--tr { top: 0; right: 0; border-top: 1px solid; border-right: 1px solid; }
+.crop-mark--bl { bottom: 0; left: 0; border-bottom: 1px solid; border-left: 1px solid; }
+.crop-mark--br { bottom: 0; right: 0; border-bottom: 1px solid; border-right: 1px solid; }
