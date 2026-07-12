@@ -46,7 +46,10 @@ export default function SignalCard({ item }: { item: SignalItem }) {
           ))}
         </div>
         <span className="text-paper-dim">
-          {item.source} · <span className="text-copper-bright">{item.score}</span>
+          {item.source} ·{" "}
+          <span className="text-copper-bright">
+            {item.score} {item.track === "technical" ? "importance" : "engagement"}
+          </span>
         </span>
       </div>
     </a>
