@@ -77,21 +77,21 @@ SOURCES = [
         "kind": "rss",
         "track": "news",
         "url": "https://spectrum.ieee.org/feeds/feed.rss",
-        "domain_hint": ["ee"],
+        "domain_hint": ["ee", "cs"],  # Spectrum covers computing/AI heavily too, not just EE
     },
     {
         "name": "Hackaday",
         "kind": "rss",
         "track": "news",
         "url": "https://hackaday.com/feed/",
-        "domain_hint": None,
+        "domain_hint": ["ee", "me"],  # overwhelmingly electronics + maker/mechanical projects
     },
     {
         "name": "ASME News",
         "kind": "rss",
         "track": "news",
         "url": "https://www.asme.org/rss-feeds/news",
-        "domain_hint": ["me"],
+        "domain_hint": ["me", "materials"],  # ASME covers manufacturing/materials too
     },
     {
         "name": "Ars Technica",
@@ -121,12 +121,14 @@ SOURCES = [
         "url": "https://cen.acs.org/feeds/rss/latestnews.xml",
         "domain_hint": ["chem"],
     },
+    {
+        "name": "Construction Dive",
+        "kind": "rss",
+        "track": "news",
+        "url": "https://www.constructiondive.com/feeds/news/",
+        "domain_hint": ["ce"],
+    },
 ]
-
-# Civil & Structural news: no reliably stable public RSS feed found for ENR
-# (Engineering News-Record) at the time this was written — their feed URLs
-# appear to require a subscription/wrapper service. If you find a working
-# one, add it here the same way as the sources above.
 
 # Note: IEEE Xplore and ACM Digital Library require registered API keys and
 # have stricter usage caps — add them here once you have credentials:
