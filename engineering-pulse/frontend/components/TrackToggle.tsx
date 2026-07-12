@@ -13,7 +13,7 @@ const OPTIONS: { value: Props["active"]; label: string }[] = [
 
 export default function TrackToggle({ active, onChange }: Props) {
   return (
-    <div className="inline-flex border border-paper-dim/30 rounded-sm overflow-hidden">
+    <div className="inline-flex shrink-0 border border-paper-dim/30 rounded-sm overflow-hidden">
       {OPTIONS.map((opt) => (
         <button
           key={opt.value}

@@ -97,7 +97,9 @@ export default function Home() {
       <section className="max-w-5xl mx-auto px-6 py-10">
         <div className="flex flex-col gap-4 mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <DomainFilter active={domain} onChange={setDomain} />
+            <div className="min-w-0">
+              <DomainFilter active={domain} onChange={setDomain} />
+            </div>
             <TrackToggle active={track} onChange={setTrack} />
           </div>
           <div className="flex justify-end">
