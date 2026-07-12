@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const display = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-display",
-  weight: ["500", "700"],
-});
-const body = Inter({ subsets: ["latin"], variable: "--font-body" });
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  weight: ["400", "500"],
-});
-
+// Fonts loaded via a static <link> instead of next/font/google. next/font
+// fetches font files from Google during the BUILD itself, which failed
+// intermittently on Vercel's build machines (unrelated to this project's
+// code). A plain <link> defers fetching to the browser at page-load time,
+// same as any normal website, so a flaky network moment during build can
+// no longer break the deploy.
 export const metadata: Metadata = {
   title: "Engineering Pulse — AI-Ranked Engineering Signals",
   description:
@@ -27,9 +20,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${display.variable} ${body.variable} ${mono.variable}`}>
-        {children}
-      </body>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }

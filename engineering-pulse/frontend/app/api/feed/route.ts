@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { pool } from "@/lib/db";
+import { getPool } from "@/lib/db";
+
+// Without this, Next.js tries to execute this route during the BUILD
+// itself (to statically analyze/prerender it), which fails the whole
+// build if DATABASE_URL isn't available at build time or the database
+// is briefly unreachable. force-dynamic tells Next this route only ever
+// runs at actual request time, never during build.
+export const dynamic = "force-dynamic";
 
 // Falls back to an empty list (rather than throwing) if the database has
 // no items yet — e.g. before ingest.py has been run for the first time.
@@ -47,7 +54,7 @@ export async function GET(request: NextRequest) {
   `;
 
   try {
-    const result = await pool.query(query, values);
+    const result = await getPool().query(query, values);
     const items = result.rows.map((row) => ({
       id: row.id,
       title: row.title,

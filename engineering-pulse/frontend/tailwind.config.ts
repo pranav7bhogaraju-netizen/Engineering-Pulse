@@ -15,9 +15,9 @@ const config: Config = {
         grid: "rgba(237,234,224,0.08)",
       },
       fontFamily: {
-        display: ["var(--font-display)"],
-        body: ["var(--font-body)"],
-        mono: ["var(--font-mono)"],
+        display: ['"Space Grotesk"', "sans-serif"],
+        body: ["Inter", "sans-serif"],
+        mono: ['"IBM Plex Mono"', "monospace"],
       },
       backgroundImage: {
         blueprint:

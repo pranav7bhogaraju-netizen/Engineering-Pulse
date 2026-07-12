@@ -8,7 +8,14 @@ declare global {
   var _pgPool: Pool | undefined;
 }
 
-function createPool() {
+// IMPORTANT: this must stay lazy (a function called at request time), not
+// a top-level `export const pool = new Pool(...)`. Next.js imports route
+// files during the build itself to inspect their config, and a top-level
+// throw (e.g. missing DATABASE_URL) would fail the entire build even
+// though the route is never actually invoked at build time.
+export function getPool(): Pool {
+  if (globalThis._pgPool) return globalThis._pgPool;
+
   if (!process.env.DATABASE_URL) {
     throw new Error(
       "DATABASE_URL is not set. Add it to frontend/.env.local for local " +
@@ -16,13 +23,11 @@ function createPool() {
         "for the deployed site."
     );
   }
-  return new Pool({
+
+  const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }, // required for Neon's hosted Postgres
   });
-}
-
-export const pool = globalThis._pgPool ?? createPool();
-if (process.env.NODE_ENV !== "production") {
   globalThis._pgPool = pool;
+  return pool;
 }
