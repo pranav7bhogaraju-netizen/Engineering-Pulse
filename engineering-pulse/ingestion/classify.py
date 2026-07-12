@@ -1,61 +1,104 @@
 """
 Domain + track classification for items that don't come with a domain_hint
-(e.g. Hacker News, general news feeds). Uses the Anthropic API with a
-structured JSON response.
+(e.g. Hacker News, general news feeds).
 
-This is a stub — wire in your ANTHROPIC_API_KEY and test on a small batch
-before running it across a full ingestion pass, since this is the main
-recurring cost in the pipeline.
+FREE VERSION: keyword-based matching instead of an LLM call. No API key,
+no cost. Trade-off: less accurate than an LLM read of the actual content —
+it can miscategorize cleverly-worded titles or miss implicit topics — but
+it's $0 to run at any frequency.
+
+If you later want higher accuracy, swap this module for an LLM-based
+version (Anthropic, OpenAI, or a local model) using the same
+classify_batch(items) interface — nothing else in the pipeline needs to
+change.
 """
 
-import json
-import os
-import anthropic
+DOMAIN_KEYWORDS = {
+    "ee": [
+        "circuit", "voltage", "current", "transistor", "semiconductor",
+        "chip", "pcb", "amplifier", "signal processing", "embedded",
+        "microcontroller", "fpga", "electrical", "power supply", "sensor",
+        "battery", "bms", "capacitor", "resistor", "rf ", "wireless",
+    ],
+    "me": [
+        "mechanical", "engine", "gear", "bearing", "actuator", "hydraulic",
+        "pneumatic", "robot", "robotics", "cad", "manufacturing", "cnc",
+        "3d print", "additive manufacturing", "hvac", "thermodynamic",
+        "fluid dynamics", "mechanism", "motor",
+    ],
+    "ce": [
+        "bridge", "building", "structural", "concrete", "construction",
+        "infrastructure", "civil engineering", "seismic", "foundation",
+        "highway", "urban planning", "geotechnical",
+    ],
+    "aero": [
+        "aircraft", "aerospace", "rocket", "spacecraft", "satellite",
+        "drone", "uav", "propulsion", "aerodynamic", "nasa", "spacex",
+        "faa", "aviation", "orbital",
+    ],
+    "chem": [
+        "chemical", "polymer", "catalyst", "reaction", "synthesis",
+        "chemistry", "molecule", "compound", "petrochemical",
+    ],
+    "materials": [
+        "materials science", "alloy", "composite", "nanomaterial",
+        "coating", "corrosion", "crystalline", "metallurgy", "graphene",
+        "ceramic",
+    ],
+    "biomed": [
+        "biomedical", "medical device", "prosthetic", "biosensor",
+        "diagnostic", "implant", "healthcare technology", "bioengineering",
+        "medical imaging", "surgical robot", "wearable health", "fda",
+        "clinical trial", "tissue engineering", "drug delivery device",
+    ],
+    "cs": [
+        "software", "algorithm", "programming", "code", "ai model",
+        "machine learning", "neural network", "database", "api",
+        "cloud computing", "cybersecurity", "app", "framework", "github",
+    ],
+}
 
-client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-
-DOMAIN_SLUGS = ["ee", "me", "ce", "aero", "chem", "materials", "biomed", "cs"]
-
-CLASSIFY_PROMPT = """You are tagging engineering content for an aggregator.
-Given the title and excerpt below, respond with ONLY a JSON object, no
-other text, no markdown fences:
-
-{{"domains": [list of 1-2 slugs from {domains}], "is_engineering_relevant": true|false, "novelty_score": 0-100}}
-
-novelty_score reflects technical significance/originality, not popularity.
-
-Title: {title}
-Excerpt: {excerpt}
-"""
+# Titles/excerpts containing these are treated as not engineering-relevant
+# even if a keyword happens to match — keeps pure business/politics/lifestyle
+# content out of the feed.
+EXCLUDE_KEYWORDS = [
+    "celebrity", "box office", "recipe", "diet", "horoscope",
+]
 
 
 def classify_item(title: str, excerpt: str) -> dict:
-    prompt = CLASSIFY_PROMPT.format(
-        domains=DOMAIN_SLUGS, title=title, excerpt=excerpt[:800]
-    )
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=200,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    raw = response.content[0].text.strip()
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        # Model occasionally wraps in fences despite instructions — strip and retry once
-        cleaned = raw.replace("```json", "").replace("```", "").strip()
-        return json.loads(cleaned)
+    text = f"{title} {excerpt}".lower()
+
+    if any(term in text for term in EXCLUDE_KEYWORDS):
+        return {"domains": [], "is_engineering_relevant": False, "novelty_score": 0}
+
+    matched_domains = []
+    for domain, keywords in DOMAIN_KEYWORDS.items():
+        if any(kw in text for kw in keywords):
+            matched_domains.append(domain)
+
+    if not matched_domains:
+        return {"domains": [], "is_engineering_relevant": False, "novelty_score": 0}
+
+    # Neutral default novelty score — with no LLM read of significance,
+    # ranking leans more heavily on recency/engagement for these items
+    # (see rank.py's score_technical/score_news weighting).
+    return {
+        "domains": matched_domains[:2],
+        "is_engineering_relevant": True,
+        "novelty_score": 50,
+    }
 
 
 def classify_batch(items: list[dict]) -> list[dict]:
-    """Mutates each item dict in place with 'domains', 'novelty_score',
-    and drops items the model flags as not engineering-relevant."""
+    """Mutates each item dict in place with 'domains' and 'novelty_score',
+    and drops items with no matching domain keywords."""
     tagged = []
     for item in items:
         result = classify_item(item["title"], item.get("raw_excerpt", ""))
-        if not result.get("is_engineering_relevant", True):
+        if not result["is_engineering_relevant"]:
             continue
-        item["domains"] = result.get("domains", [])
-        item["novelty_score"] = result.get("novelty_score", 50)
+        item["domains"] = result["domains"]
+        item["novelty_score"] = result["novelty_score"]
         tagged.append(item)
     return tagged

@@ -1,27 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MOCK_ITEMS } from "@/lib/mockData";
+import { pool } from "@/lib/db";
 
-// Swap this file's body for a Postgres query once db/schema.sql is live:
-//   SELECT items.*, item_scores.composite_score
-//   FROM items JOIN item_scores ON items.id = item_scores.item_id
-//   JOIN item_domains ON items.id = item_domains.item_id
-//   WHERE ($domain IS NULL OR item_domains.domain_slug = $domain)
-//     AND ($track IS NULL OR items.track = $track)
-//   ORDER BY item_scores.composite_score DESC LIMIT 30
-
+// Falls back to an empty list (rather than throwing) if the database has
+// no items yet — e.g. before ingest.py has been run for the first time.
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const domain = searchParams.get("domain");
   const track = searchParams.get("track");
 
-  let items = MOCK_ITEMS;
+  const conditions: string[] = [];
+  const values: string[] = [];
+
   if (domain && domain !== "all") {
-    items = items.filter((item) => item.domains.includes(domain));
+    values.push(domain);
+    conditions.push(`id.domain_slug = $${values.length}`);
   }
   if (track && track !== "all") {
-    items = items.filter((item) => item.track === track);
+    values.push(track);
+    conditions.push(`items.track = $${values.length}`);
   }
-  items = [...items].sort((a, b) => b.score - a.score);
 
-  return NextResponse.json({ items });
+  const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const query = `
+    SELECT
+      items.id,
+      items.title,
+      items.url,
+      items.summary,
+      items.track,
+      items.published_at,
+      sources.name AS source,
+      COALESCE(item_scores.composite_score, 0) AS score,
+      COALESCE(
+        array_agg(DISTINCT id.domain_slug) FILTER (WHERE id.domain_slug IS NOT NULL),
+        '{}'
+      ) AS domains
+    FROM items
+    LEFT JOIN sources ON items.source_id = sources.id
+    LEFT JOIN item_scores ON items.id = item_scores.item_id
+    LEFT JOIN item_domains id ON items.id = id.item_id
+    ${whereClause}
+    GROUP BY items.id, sources.name, item_scores.composite_score
+    ORDER BY score DESC, items.published_at DESC
+    LIMIT 60
+  `;
+
+  try {
+    const result = await pool.query(query, values);
+    const items = result.rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      url: row.url,
+      source: row.source ?? "Unknown source",
+      domains: row.domains ?? [],
+      track: row.track,
+      summary: row.summary ?? "",
+      score: Number(row.score) || 0,
+      publishedAt: row.published_at,
+    }));
+    return NextResponse.json({ items });
+  } catch (error) {
+    console.error("Feed query failed:", error);
+    return NextResponse.json(
+      { items: [], error: "Could not load feed. Check DATABASE_URL and that ingest.py has run." },
+      { status: 500 }
+    );
+  }
 }

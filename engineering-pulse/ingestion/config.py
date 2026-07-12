@@ -30,6 +30,34 @@ SOURCES = [
         "domain_hint": ["materials"],
     },
     {
+        "name": "arXiv q-bio.TO / eess.IV (Biomedical & Medical Imaging)",
+        "kind": "arxiv",
+        "track": "technical",
+        "query": "cat:q-bio.TO OR cat:eess.IV",
+        "domain_hint": ["biomed"],
+    },
+    {
+        "name": "arXiv physics.geo-ph (Geophysics / Civil & Structural)",
+        "kind": "arxiv",
+        "track": "technical",
+        "query": "cat:physics.geo-ph OR abs:\"structural engineering\" OR abs:\"civil engineering\"",
+        "domain_hint": ["ce"],
+    },
+    {
+        "name": "arXiv physics.flu-dyn + aerospace keywords",
+        "kind": "arxiv",
+        "track": "technical",
+        "query": "cat:physics.flu-dyn OR abs:aerospace OR abs:aircraft OR abs:aerodynamic",
+        "domain_hint": ["aero"],
+    },
+    {
+        "name": "arXiv physics.chem-ph (Chemical Physics / Chemical Engineering)",
+        "kind": "arxiv",
+        "track": "technical",
+        "query": "cat:physics.chem-ph",
+        "domain_hint": ["chem"],
+    },
+    {
         "name": "Digi-Key New Products RSS",
         "kind": "rss",
         "track": "technical",
@@ -72,7 +100,33 @@ SOURCES = [
         "url": "https://feeds.arstechnica.com/arstechnica/index",
         "domain_hint": None,
     },
+    {
+        "name": "MedTech Dive",
+        "kind": "rss",
+        "track": "news",
+        "url": "https://www.medtechdive.com/feeds/news/",
+        "domain_hint": ["biomed"],
+    },
+    {
+        "name": "NASA Breaking News",
+        "kind": "rss",
+        "track": "news",
+        "url": "https://www.nasa.gov/rss/dyn/breaking_news.rss",
+        "domain_hint": ["aero"],
+    },
+    {
+        "name": "C&EN Latest News (Chemical & Engineering News)",
+        "kind": "rss",
+        "track": "news",
+        "url": "https://cen.acs.org/feeds/rss/latestnews.xml",
+        "domain_hint": ["chem"],
+    },
 ]
+
+# Civil & Structural news: no reliably stable public RSS feed found for ENR
+# (Engineering News-Record) at the time this was written — their feed URLs
+# appear to require a subscription/wrapper service. If you find a working
+# one, add it here the same way as the sources above.
 
 # Note: IEEE Xplore and ACM Digital Library require registered API keys and
 # have stricter usage caps — add them here once you have credentials:

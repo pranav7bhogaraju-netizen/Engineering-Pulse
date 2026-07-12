@@ -1,36 +1,46 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DomainFilter from "@/components/DomainFilter";
 import TrackToggle from "@/components/TrackToggle";
 import SignalCard from "@/components/SignalCard";
-import { MOCK_ITEMS } from "@/lib/mockData";
+import { SignalItem } from "@/lib/mockData";
 
 export default function Home() {
   const [domain, setDomain] = useState("all");
   const [track, setTrack] = useState<"all" | "technical" | "news">("all");
+  const [items, setItems] = useState<SignalItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (domain !== "all") params.set("domain", domain);
+    if (track !== "all") params.set("track", track);
+
+    setLoading(true);
+    fetch(`/api/feed?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setItems(data.items ?? []);
+        setError(data.error ?? null);
+      })
+      .catch(() => setError("Could not reach the feed API."))
+      .finally(() => setLoading(false));
+  }, [domain, track]);
 
   const topPerDomain = useMemo(() => {
-    // one highest-scoring item per domain, for the hero ticker
     const seen = new Set<string>();
-    return MOCK_ITEMS.filter((item) => item.score)
+    return [...items]
       .sort((a, b) => b.score - a.score)
       .filter((item) => {
         const key = item.domains[0];
-        if (seen.has(key)) return false;
+        if (!key || seen.has(key)) return false;
         seen.add(key);
         return true;
       })
       .slice(0, 6);
-  }, []);
-
-  const filtered = useMemo(() => {
-    return MOCK_ITEMS.filter((item) => {
-      const domainMatch = domain === "all" || item.domains.includes(domain);
-      const trackMatch = track === "all" || item.track === track;
-      return domainMatch && trackMatch;
-    }).sort((a, b) => b.score - a.score);
-  }, [domain, track]);
+  }, [items]);
 
   return (
     <main className="min-h-screen">
@@ -57,25 +67,27 @@ export default function Home() {
         </div>
 
         {/* Ticker */}
-        <div className="max-w-5xl mx-auto mt-12 border-t border-paper-dim/20 pt-4">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-paper-dim mb-3">
-            Top signal per domain
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2">
-            {topPerDomain.map((item) => (
-              <a
-                key={item.id}
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-mono text-xs text-paper-dim hover:text-copper-bright truncate transition-colors"
-              >
-                <span className="text-copper">{item.domains[0].toUpperCase()}</span> —{" "}
-                {item.title}
-              </a>
-            ))}
+        {topPerDomain.length > 0 && (
+          <div className="max-w-5xl mx-auto mt-12 border-t border-paper-dim/20 pt-4">
+            <p className="font-mono text-[11px] uppercase tracking-widest text-paper-dim mb-3">
+              Top signal per domain
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2">
+              {topPerDomain.map((item) => (
+                <a
+                  key={item.id}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-xs text-paper-dim hover:text-copper-bright truncate transition-colors"
+                >
+                  <span className="text-copper">{item.domains[0]?.toUpperCase()}</span> —{" "}
+                  {item.title}
+                </a>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* Filters + feed */}
@@ -85,13 +97,22 @@ export default function Home() {
           <TrackToggle active={track} onChange={setTrack} />
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
           <p className="font-mono text-sm text-paper-dim py-12 text-center">
-            No signals match this filter yet — check back after the next ingestion run.
+            Loading signals...
+          </p>
+        ) : error ? (
+          <p className="font-mono text-sm text-copper py-12 text-center max-w-md mx-auto">
+            {error}
+          </p>
+        ) : items.length === 0 ? (
+          <p className="font-mono text-sm text-paper-dim py-12 text-center max-w-md mx-auto">
+            No signals in the database yet — run <code>python ingest.py</code>{" "}
+            in the ingestion folder to pull real content.
           </p>
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
-            {filtered.map((item) => (
+            {items.map((item) => (
               <SignalCard key={item.id} item={item} />
             ))}
           </div>
