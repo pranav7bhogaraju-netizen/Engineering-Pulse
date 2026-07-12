@@ -19,7 +19,7 @@ from sources import fetch_arxiv, fetch_hn, fetch_rss
 from classify import classify_batch
 from rank import score_item
 
-DB_URL = os.environ.get("DATABASE_URL", "postgresql://localhost/engineering_pulse")
+DB_URL = os.environ.get("DATABASE_URL", "postgresql://localhost/engineering_pulse").strip()
 
 
 def fetch_for_source(source: dict) -> list[dict]:
