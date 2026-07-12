@@ -37,18 +37,17 @@ export async function GET(request: NextRequest) {
       items.summary,
       items.track,
       items.published_at,
-      sources.name AS source,
+      items.source_name AS source,
       COALESCE(item_scores.composite_score, 0) AS score,
       COALESCE(
         array_agg(DISTINCT id.domain_slug) FILTER (WHERE id.domain_slug IS NOT NULL),
         '{}'
       ) AS domains
     FROM items
-    LEFT JOIN sources ON items.source_id = sources.id
     LEFT JOIN item_scores ON items.id = item_scores.item_id
     LEFT JOIN item_domains id ON items.id = id.item_id
     ${whereClause}
-    GROUP BY items.id, sources.name, item_scores.composite_score
+    GROUP BY items.id, item_scores.composite_score
     ORDER BY score DESC, items.published_at DESC
     LIMIT 60
   `;

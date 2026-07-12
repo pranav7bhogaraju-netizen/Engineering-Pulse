@@ -43,8 +43,8 @@ def upsert_item(cur, item: dict, score: float):
     cur.execute(
         """
         INSERT INTO items (title, url, external_id, track, published_at,
-                            raw_excerpt, engagement_raw)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            raw_excerpt, engagement_raw, source_name)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (url) DO NOTHING
         RETURNING id
         """,
@@ -53,6 +53,7 @@ def upsert_item(cur, item: dict, score: float):
             item["track"], item["published_at_parsed"],
             item.get("raw_excerpt", ""),
             psycopg2.extras.Json(item.get("engagement_raw", {})),
+            item.get("source_name", "Unknown source"),
         ),
     )
     row = cur.fetchone()
