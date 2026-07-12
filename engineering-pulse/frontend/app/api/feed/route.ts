@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const domain = searchParams.get("domain");
   const track = searchParams.get("track");
+  const sort = searchParams.get("sort") === "new" ? "new" : "top";
 
   const conditions: string[] = [];
   const values: string[] = [];
@@ -28,6 +29,10 @@ export async function GET(request: NextRequest) {
   }
 
   const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const orderClause =
+    sort === "new"
+      ? "ORDER BY items.published_at DESC"
+      : "ORDER BY score DESC, items.published_at DESC";
 
   const query = `
     SELECT
@@ -48,7 +53,7 @@ export async function GET(request: NextRequest) {
     LEFT JOIN item_domains id ON items.id = id.item_id
     ${whereClause}
     GROUP BY items.id, item_scores.composite_score
-    ORDER BY score DESC, items.published_at DESC
+    ${orderClause}
     LIMIT 60
   `;
 

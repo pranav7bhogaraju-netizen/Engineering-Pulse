@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import DomainFilter from "@/components/DomainFilter";
 import TrackToggle from "@/components/TrackToggle";
+import SortToggle from "@/components/SortToggle";
 import SignalCard from "@/components/SignalCard";
 import { SignalItem } from "@/lib/mockData";
 
 export default function Home() {
   const [domain, setDomain] = useState("all");
   const [track, setTrack] = useState<"all" | "technical" | "news">("all");
+  const [sort, setSort] = useState<"top" | "new">("top");
   const [items, setItems] = useState<SignalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,6 +19,7 @@ export default function Home() {
     const params = new URLSearchParams();
     if (domain !== "all") params.set("domain", domain);
     if (track !== "all") params.set("track", track);
+    params.set("sort", sort);
 
     setLoading(true);
     fetch(`/api/feed?${params.toString()}`)
@@ -27,7 +30,7 @@ export default function Home() {
       })
       .catch(() => setError("Could not reach the feed API."))
       .finally(() => setLoading(false));
-  }, [domain, track]);
+  }, [domain, track, sort]);
 
   const topPerDomain = useMemo(() => {
     const seen = new Set<string>();
@@ -92,9 +95,14 @@ export default function Home() {
 
       {/* Filters + feed */}
       <section className="max-w-5xl mx-auto px-6 py-10">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <DomainFilter active={domain} onChange={setDomain} />
-          <TrackToggle active={track} onChange={setTrack} />
+        <div className="flex flex-col gap-4 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <DomainFilter active={domain} onChange={setDomain} />
+            <TrackToggle active={track} onChange={setTrack} />
+          </div>
+          <div className="flex justify-end">
+            <SortToggle active={sort} onChange={setSort} />
+          </div>
         </div>
 
         {loading ? (
