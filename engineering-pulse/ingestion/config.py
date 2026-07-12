@@ -128,6 +128,20 @@ SOURCES = [
         "url": "https://www.constructiondive.com/feeds/news/",
         "domain_hint": ["ce"],
     },
+    {
+        "name": "Tech Xplore",
+        "kind": "rss",
+        "track": "news",
+        "url": "https://techxplore.com/rss-feed/",
+        "domain_hint": None,  # spans multiple domains; classify.py tags per-article
+    },
+    {
+        "name": "Interesting Engineering",
+        "kind": "rss",
+        "track": "news",
+        "url": "https://interestingengineering.com/feed",
+        "domain_hint": None,  # spans multiple domains; classify.py tags per-article
+    },
 ]
 
 # Note: IEEE Xplore and ACM Digital Library require registered API keys and
