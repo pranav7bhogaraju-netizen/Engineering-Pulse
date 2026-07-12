@@ -1,0 +1,31 @@
+name: Run ingestion pipeline
+
+# Runs automatically every hour, and can also be triggered manually from
+# the "Actions" tab on GitHub (useful for testing without waiting for the
+# schedule). Cron uses UTC — "0 * * * *" means "at minute 0 of every hour".
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: engineering-pulse/ingestion
+        run: pip install -r requirements.txt
+
+      - name: Run ingestion
+        working-directory: engineering-pulse/ingestion
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python ingest.py
