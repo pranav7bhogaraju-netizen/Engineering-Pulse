@@ -96,9 +96,18 @@ def run():
             except (ValueError, TypeError):
                 item["published_at_parsed"] = datetime.now(timezone.utc)
 
+        # Split into items that already have a domain (pre-tagged sources
+        # like arXiv feeds) and items that need the keyword classifier.
+        pre_tagged = [i for i in items if i.get("domains")]
         needs_classification = [i for i in items if not i.get("domains")]
-        if needs_classification:
-            classify_batch(needs_classification)  # mutates in place
+
+        # classify_batch DROPS items it decides aren't engineering-relevant
+        # (returns a shorter list) — using its return value, rather than
+        # the original unfiltered list, is what actually enforces that
+        # filtering. Previously this return value was discarded, so
+        # irrelevant items (empty domains) were being inserted anyway.
+        classified = classify_batch(needs_classification) if needs_classification else []
+        items = pre_tagged + classified
 
         for item in items:
             if "novelty_score" not in item:
