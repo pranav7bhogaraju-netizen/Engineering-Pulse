@@ -11,6 +11,14 @@ function timeAgo(iso: string) {
   return `${Math.round(hours / 24)}d ago`;
 }
 
+// Source names from config.py include parenthetical explanations for
+// humans reading the config file (e.g. "arXiv cs.AR / cs.RO (Architecture,
+// Robotics)") — trim that off for display since the domain tag already
+// conveys the subject.
+function shortSource(source: string) {
+  return source.split(" (")[0];
+}
+
 export default function SignalCard({ item }: { item: SignalItem }) {
   const trackColor = item.track === "technical" ? "text-pcb" : "text-copper";
 
@@ -34,7 +42,7 @@ export default function SignalCard({ item }: { item: SignalItem }) {
 
       <p className="text-sm text-paper-dim leading-relaxed mb-4">{item.summary}</p>
 
-      <div className="flex items-center justify-between font-mono text-[11px]">
+      <div className="flex flex-col gap-2 font-mono text-[11px] pt-3 border-t border-paper-dim/10">
         <div className="flex flex-wrap gap-1.5">
           {item.domains.map((slug) => (
             <span
@@ -45,12 +53,12 @@ export default function SignalCard({ item }: { item: SignalItem }) {
             </span>
           ))}
         </div>
-        <span className="text-paper-dim">
-          {item.source} ·{" "}
-          <span className="text-copper-bright">
+        <div className="flex items-center justify-between gap-3 text-paper-dim">
+          <span className="truncate">{shortSource(item.source)}</span>
+          <span className="text-copper-bright whitespace-nowrap shrink-0">
             {item.score} {item.track === "technical" ? "importance" : "engagement"}
           </span>
-        </span>
+        </div>
       </div>
     </a>
   );
