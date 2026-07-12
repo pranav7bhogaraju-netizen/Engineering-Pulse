@@ -45,7 +45,9 @@ def upsert_item(cur, item: dict, score: float):
         INSERT INTO items (title, url, external_id, track, published_at,
                             raw_excerpt, engagement_raw, source_name)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (url) DO NOTHING
+        ON CONFLICT (url) DO UPDATE SET
+            source_name = EXCLUDED.source_name,
+            engagement_raw = EXCLUDED.engagement_raw
         RETURNING id
         """,
         (
@@ -56,10 +58,7 @@ def upsert_item(cur, item: dict, score: float):
             item.get("source_name", "Unknown source"),
         ),
     )
-    row = cur.fetchone()
-    if row is None:
-        return  # already existed, skip domain/score writes
-    item_id = row[0]
+    item_id = cur.fetchone()[0]
 
     for domain in item.get("domains") or []:
         cur.execute(
