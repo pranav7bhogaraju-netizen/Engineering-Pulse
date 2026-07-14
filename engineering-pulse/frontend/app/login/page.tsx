@@ -1,15 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 
 export default function Login() {
+  const { status } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [magicEmail, setMagicEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+
+  // If someone lands on /login while already signed in — including right
+  // after clicking a magic link, which by default redirects back to
+  // wherever it was requested from (this very page) — send them onward
+  // instead of showing the sign-in form again.
+  useEffect(() => {
+    if (status === "authenticated") {
+      window.location.href = "/blogs";
+    }
+  }, [status]);
 
   async function handlePasswordLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -25,7 +36,7 @@ export default function Login() {
   async function handleMagicLink(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    await signIn("email", { email: magicEmail, redirect: false });
+    await signIn("email", { email: magicEmail, redirect: false, callbackUrl: "/blogs" });
     setMagicLinkSent(true);
   }
 
