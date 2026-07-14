@@ -11,6 +11,7 @@ export default function Login() {
   const [magicEmail, setMagicEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [sendingMagicLink, setSendingMagicLink] = useState(false);
 
   // If someone lands on /login while already signed in — including right
   // after clicking a magic link, which by default redirects back to
@@ -35,8 +36,11 @@ export default function Login() {
 
   async function handleMagicLink(e: React.FormEvent) {
     e.preventDefault();
+    if (sendingMagicLink) return; // ignore rapid double-clicks/re-submits
     setError(null);
+    setSendingMagicLink(true);
     await signIn("email", { email: magicEmail, redirect: false, callbackUrl: "/blogs" });
+    setSendingMagicLink(false);
     setMagicLinkSent(true);
   }
 
@@ -120,9 +124,10 @@ export default function Login() {
             />
             <button
               type="submit"
-              className="w-full py-2.5 border border-paper-dim/30 rounded-sm font-mono text-sm hover:border-copper/50 hover:text-copper-bright transition-colors"
+              disabled={sendingMagicLink}
+              className="w-full py-2.5 border border-paper-dim/30 rounded-sm font-mono text-sm hover:border-copper/50 hover:text-copper-bright transition-colors disabled:opacity-50"
             >
-              Email me a sign-in link
+              {sendingMagicLink ? "Sending..." : "Email me a sign-in link"}
             </button>
           </form>
         )}
