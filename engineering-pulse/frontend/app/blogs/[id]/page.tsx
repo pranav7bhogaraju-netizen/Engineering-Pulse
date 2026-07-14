@@ -1,0 +1,164 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+
+interface Thread {
+  id: number;
+  title: string;
+  body: string;
+  created_at: string;
+  author_name: string;
+  linked_item_title: string | null;
+  linked_item_url: string | null;
+}
+interface Post {
+  id: number;
+  content: string;
+  created_at: string;
+  author_name: string;
+}
+
+function timeAgo(iso: string) {
+  const hours = Math.round((Date.now() - new Date(iso).getTime()) / 3600000);
+  if (hours < 1) return "just now";
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
+}
+
+export default function ThreadPage() {
+  const { id } = useParams<{ id: string }>();
+  const { status } = useSession();
+  const [thread, setThread] = useState<Thread | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [reply, setReply] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function load() {
+    fetch(`/api/threads/${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setThread(data.thread ?? null);
+        setPosts(data.posts ?? []);
+      })
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  async function handleReply(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+
+    const res = await fetch(`/api/threads/${id}/posts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: reply }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error ?? "Something went wrong.");
+      setSubmitting(false);
+      return;
+    }
+
+    setReply("");
+    setSubmitting(false);
+    load();
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <p className="font-mono text-sm text-paper-dim">Loading...</p>
+      </main>
+    );
+  }
+
+  if (!thread) {
+    return (
+      <main className="min-h-screen flex items-center justify-center px-6">
+        <p className="font-mono text-sm text-paper-dim">Thread not found.</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen px-6 py-14">
+      <div className="max-w-2xl mx-auto">
+        <Link
+          href="/blogs"
+          className="inline-block font-mono text-xs uppercase tracking-widest text-paper-dim hover:text-copper-bright transition-colors mb-8"
+        >
+          ← Back to discussions
+        </Link>
+
+        <h1 className="font-display font-bold text-2xl md:text-3xl mb-2">{thread.title}</h1>
+        {thread.linked_item_title && thread.linked_item_url && (
+          <a
+            href={thread.linked_item_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block font-mono text-[11px] text-pcb uppercase tracking-wide mb-3 hover:underline"
+          >
+            Discussing: {thread.linked_item_title}
+          </a>
+        )}
+        <p className="font-mono text-xs text-paper-dim mb-6">
+          {thread.author_name} · {timeAgo(thread.created_at)}
+        </p>
+        <p className="text-paper-dim leading-relaxed whitespace-pre-wrap mb-10 pb-10 border-b border-paper-dim/20">
+          {thread.body}
+        </p>
+
+        <div className="space-y-6 mb-10">
+          {posts.map((post) => (
+            <div key={post.id} className="border-l-2 border-paper-dim/20 pl-4">
+              <p className="font-mono text-xs text-paper-dim mb-1">
+                {post.author_name} · {timeAgo(post.created_at)}
+              </p>
+              <p className="text-paper-dim leading-relaxed whitespace-pre-wrap">{post.content}</p>
+            </div>
+          ))}
+        </div>
+
+        {status === "authenticated" ? (
+          <form onSubmit={handleReply} className="space-y-3">
+            <textarea
+              required
+              rows={4}
+              placeholder="Write a reply..."
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              className="w-full px-3 py-2 bg-ink-raised border border-paper-dim/30 rounded-sm text-sm focus:outline-none focus:border-copper/50 resize-y"
+            />
+            {error && <p className="text-copper text-xs font-mono">{error}</p>}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-5 py-2 bg-copper text-ink rounded-sm font-mono text-sm hover:bg-copper-bright transition-colors disabled:opacity-50"
+            >
+              {submitting ? "Posting..." : "Reply"}
+            </button>
+          </form>
+        ) : (
+          <p className="font-mono text-sm text-paper-dim">
+            <Link href="/login" className="text-copper-bright hover:underline">
+              Sign in
+            </Link>{" "}
+            to reply.
+          </p>
+        )}
+      </div>
+    </main>
+  );
+}
