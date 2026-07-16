@@ -41,10 +41,16 @@ def fetch_hn(min_points: int = 50, max_results: int = 30) -> list[dict]:
 
     items = []
     for story_id in top_ids:
-        story = requests.get(
-            f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json",
-            timeout=10,
-        ).json()
+        try:
+            story = requests.get(
+                f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json",
+                timeout=10,
+            ).json()
+        except requests.exceptions.RequestException:
+            # One story's request resetting/timing out shouldn't cost us
+            # the other 99 — just skip it and keep going.
+            continue
+
         if not story or story.get("score", 0) < min_points:
             continue
         if "url" not in story:

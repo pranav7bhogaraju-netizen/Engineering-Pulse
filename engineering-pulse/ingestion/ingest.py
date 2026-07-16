@@ -83,7 +83,15 @@ def run():
 
     for source in SOURCES:
         print(f"Fetching: {source['name']}")
-        items = fetch_for_source(source)
+        try:
+            items = fetch_for_source(source)
+        except Exception as e:
+            # A single flaky network request (a reset connection, a timeout,
+            # a temporarily-down feed) shouldn't take down the whole run and
+            # cost every OTHER source its chance to update this cycle.
+            # Log it and move on — the source gets another shot next hour.
+            print(f"  Skipping {source['name']}: {e}")
+            continue
 
         # Parse dates up front so classify/score both get a real datetime
         for item in items:
