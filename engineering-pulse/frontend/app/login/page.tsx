@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function Login() {
+function LoginContent() {
   const { status } = useSession();
+  const searchParams = useSearchParams();
+  // Whichever page the user clicked "Sign in" from passes its own path as
+  // ?callbackUrl=... so login returns them there. Falls back to the
+  // homepage if none was provided (e.g. someone visits /login directly).
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [magicEmail, setMagicEmail] = useState("");
@@ -14,14 +21,14 @@ export default function Login() {
   const [sendingMagicLink, setSendingMagicLink] = useState(false);
 
   // If someone lands on /login while already signed in — including right
-  // after clicking a magic link, which by default redirects back to
-  // wherever it was requested from (this very page) — send them onward
-  // instead of showing the sign-in form again.
+  // after clicking a magic link, which redirects back to wherever it was
+  // requested from (this very page) — send them onward instead of showing
+  // the sign-in form again.
   useEffect(() => {
     if (status === "authenticated") {
-      window.location.href = "/blogs";
+      window.location.href = callbackUrl;
     }
-  }, [status]);
+  }, [status, callbackUrl]);
 
   async function handlePasswordLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -30,7 +37,7 @@ export default function Login() {
     if (result?.error) {
       setError("Incorrect email or password.");
     } else {
-      window.location.href = "/blogs";
+      window.location.href = callbackUrl;
     }
   }
 
@@ -39,7 +46,7 @@ export default function Login() {
     if (sendingMagicLink) return; // ignore rapid double-clicks/re-submits
     setError(null);
     setSendingMagicLink(true);
-    await signIn("email", { email: magicEmail, redirect: false, callbackUrl: "/blogs" });
+    await signIn("email", { email: magicEmail, redirect: false, callbackUrl });
     setSendingMagicLink(false);
     setMagicLinkSent(true);
   }
@@ -57,7 +64,7 @@ export default function Login() {
         <h1 className="font-display font-bold text-2xl mb-8">Sign in</h1>
 
         <button
-          onClick={() => signIn("google", { callbackUrl: "/blogs" })}
+          onClick={() => signIn("google", { callbackUrl })}
           className="w-full mb-6 py-2.5 border border-paper-dim/30 rounded-sm font-mono text-sm hover:border-copper/50 hover:text-copper-bright transition-colors"
         >
           Continue with Google
@@ -97,7 +104,10 @@ export default function Login() {
 
         <p className="font-mono text-xs text-paper-dim mb-6">
           No account?{" "}
-          <Link href="/signup" className="text-copper-bright hover:underline">
+          <Link
+            href={`/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+            className="text-copper-bright hover:underline"
+          >
             Sign up
           </Link>
         </p>
@@ -133,5 +143,13 @@ export default function Login() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function Login() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }

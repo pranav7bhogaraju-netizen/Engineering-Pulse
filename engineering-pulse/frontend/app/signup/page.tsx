@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function Signup() {
+function SignupContent() {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +38,7 @@ export default function Signup() {
       setError("Account created — please sign in.");
       setLoading(false);
     } else {
-      window.location.href = "/blogs";
+      window.location.href = callbackUrl;
     }
   }
 
@@ -87,11 +91,22 @@ export default function Signup() {
 
         <p className="font-mono text-xs text-paper-dim mt-6">
           Already have an account?{" "}
-          <Link href="/login" className="text-copper-bright hover:underline">
+          <Link
+            href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+            className="text-copper-bright hover:underline"
+          >
             Sign in
           </Link>
         </p>
       </div>
     </main>
+  );
+}
+
+export default function Signup() {
+  return (
+    <Suspense fallback={null}>
+      <SignupContent />
+    </Suspense>
   );
 }
