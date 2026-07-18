@@ -3,27 +3,32 @@
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 
+function getInitials(name: string | null | undefined, email: string | null | undefined) {
+  const source = name?.trim() || email || "?";
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return source.slice(0, 2).toUpperCase();
+}
+
 export default function AuthStatus() {
   const { data: session, status } = useSession();
 
   if (status === "loading") {
-    return <div className="w-16 h-4" />; // reserve space, avoid layout shift
+    return <div className="w-7 h-7" />; // reserve space, avoid layout shift
   }
 
   if (status === "authenticated") {
+    const initials = getInitials(session.user?.name, session.user?.email);
     return (
-      <div className="flex items-center gap-2 font-mono text-xs">
-        <span className="text-pcb" title="Signed in">
-          ●
-        </span>
-        <span className="text-paper-dim">{session.user?.name ?? session.user?.email}</span>
-        <button
-          onClick={() => signOut({ callbackUrl: "/" })}
-          className="text-paper-dim hover:text-copper-bright transition-colors underline decoration-dotted"
-        >
-          Sign out
-        </button>
-      </div>
+      <button
+        onClick={() => signOut({ callbackUrl: "/" })}
+        title={`Signed in as ${session.user?.name ?? session.user?.email} — click to sign out`}
+        className="w-7 h-7 flex items-center justify-center rounded-full bg-copper text-ink font-mono text-[11px] font-medium hover:bg-copper-bright transition-colors"
+      >
+        {initials}
+      </button>
     );
   }
 

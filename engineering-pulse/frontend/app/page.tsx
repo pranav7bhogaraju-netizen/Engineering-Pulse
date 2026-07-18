@@ -62,23 +62,21 @@ export default function Home() {
           <NavPanel />
         </div>
 
-        <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex flex-col items-end gap-2">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/blogs"
-              className="font-mono text-xs uppercase tracking-wide text-paper-dim hover:text-copper-bright transition-colors"
-            >
-              Blogs
-            </Link>
-            <Link
-              href="/about"
-              className="font-mono text-xs uppercase tracking-wide text-paper-dim hover:text-copper-bright transition-colors"
-            >
-              About
-            </Link>
-            <ThemeToggle />
-          </div>
+        <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex items-center gap-3">
+          <Link
+            href="/blogs"
+            className="font-mono text-xs uppercase tracking-wide text-paper-dim hover:text-copper-bright transition-colors"
+          >
+            Blogs
+          </Link>
+          <Link
+            href="/about"
+            className="font-mono text-xs uppercase tracking-wide text-paper-dim hover:text-copper-bright transition-colors"
+          >
+            About
+          </Link>
           <AuthStatus />
+          <ThemeToggle />
         </div>
 
         <div className="max-w-4xl mx-auto text-center">
