@@ -14,17 +14,26 @@ function timeAgo(iso: string) {
   return `updated ${hours}h ago`;
 }
 
-export default function AIOverviewPanel({ track }: { track: "technical" | "news" }) {
-  const [data, setData] = useState<OverviewData | null>(null);
+export default function AIOverviewPanel({
+  track,
+  sort,
+}: {
+  track: "technical" | "news";
+  sort: "top" | "new";
+}) {
+  const [overviews, setOverviews] = useState<Record<string, OverviewData>>({});
 
   useEffect(() => {
     fetch("/api/overview")
       .then((res) => res.json())
-      .then((json) => setData(json.overviews?.[track] ?? null))
+      .then((json) => setOverviews(json.overviews?.[track] ?? {}))
       .catch(() => {});
   }, [track]);
 
+  const data = overviews[sort];
   if (!data) return null;
+
+  const sortLabel = sort === "top" ? "Top-ranked" : "Newest";
 
   return (
     <div className="hidden 2xl:block">
@@ -35,6 +44,9 @@ export default function AIOverviewPanel({ track }: { track: "technical" | "news"
           </svg>
           AI Overview — {track === "technical" ? "Technical" : "News"}
         </div>
+        <p className="font-mono text-[10px] text-paper-dim/70 uppercase tracking-wide mb-2">
+          {sortLabel}
+        </p>
         <p className="text-xs text-paper-dim leading-relaxed mb-2">{data.summary}</p>
         <p className="font-mono text-[10px] text-paper-dim/70">{timeAgo(data.generated_at)}</p>
       </div>

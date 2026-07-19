@@ -140,7 +140,7 @@ export default function Home() {
         </div>
 
         <div className="max-w-[1500px] mx-auto grid grid-cols-1 2xl:grid-cols-[260px_1fr_260px] gap-6 items-start">
-          <AIOverviewPanel track="news" />
+          <AIOverviewPanel track="news" sort={sort} />
 
           <div className="max-w-5xl mx-auto w-full">
             {loading ? (
@@ -165,7 +165,7 @@ export default function Home() {
             )}
           </div>
 
-          <AIOverviewPanel track="technical" />
+          <AIOverviewPanel track="technical" sort={sort} />
         </div>
       </section>
     </main>
