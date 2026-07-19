@@ -8,6 +8,7 @@ import SortToggle from "@/components/SortToggle";
 import ThemeToggle from "@/components/ThemeToggle";
 import NavPanel from "@/components/NavPanel";
 import AuthStatus from "@/components/AuthStatus";
+import AIOverview from "@/components/AIOverview";
 import SignalCard from "@/components/SignalCard";
 import { SignalItem } from "@/lib/mockData";
 
@@ -117,6 +118,8 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      <AIOverview track={track} />
 
       {/* Filters + feed */}
       <section className="max-w-5xl mx-auto px-6 py-10">

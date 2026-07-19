@@ -18,6 +18,7 @@ from config import SOURCES
 from sources import fetch_arxiv, fetch_hn, fetch_rss
 from classify import classify_batch
 from rank import score_item
+from overview import generate_overviews
 
 DB_URL = os.environ.get("DATABASE_URL", "postgresql://localhost/engineering_pulse").strip()
 
@@ -124,6 +125,10 @@ def run():
             upsert_item(cur, item, score)
 
         conn.commit()
+
+    print("Generating AI overviews...")
+    generate_overviews(cur)
+    conn.commit()
 
     cur.close()
     conn.close()

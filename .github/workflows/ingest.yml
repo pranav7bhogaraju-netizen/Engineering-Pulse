@@ -28,4 +28,5 @@ jobs:
         working-directory: engineering-pulse/ingestion
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python ingest.py
