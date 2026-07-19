@@ -42,9 +42,14 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Resource classification failed:", error);
+    const isRateLimited = error instanceof Error && error.message.includes("429");
     return NextResponse.json(
-      { error: "Couldn't review this submission right now — try again in a moment." },
-      { status: 500 }
+      {
+        error: isRateLimited
+          ? "The AI reviewer is getting a lot of requests right now — please wait about a minute and try again."
+          : "Couldn't review this submission right now — try again in a moment.",
+      },
+      { status: isRateLimited ? 429 : 500 }
     );
   }
 
