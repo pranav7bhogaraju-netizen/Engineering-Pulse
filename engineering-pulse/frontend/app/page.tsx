@@ -77,7 +77,7 @@ export default function Home() {
 
         <div className="max-w-4xl mx-auto text-center">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-copper mb-4">
-            Rev. 2026.07 — Engineering Signals, Ranked
+            Rev. 2026.07 — An Engineer's Playground
           </p>
           <h1 className="font-display font-bold text-4xl md:text-6xl leading-tight mb-4">
             Engineering Pulse
