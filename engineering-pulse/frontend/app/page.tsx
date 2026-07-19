@@ -123,22 +123,26 @@ export default function Home() {
           wide screens — normal document flow, so they scroll in and out
           of view along with this section, not fixed to the viewport. */}
       <section className="px-6 py-10">
+        {/* Filters sit full-width above, outside the 3-column grid, so the
+            grid below starts exactly at the card row — that's what keeps
+            the side panels aligned with the first row of cards instead of
+            the filter controls above them. */}
+        <div className="max-w-5xl mx-auto flex flex-col gap-4 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="min-w-0">
+              <DomainFilter active={domain} onChange={setDomain} />
+            </div>
+            <TrackToggle active={track} onChange={setTrack} />
+          </div>
+          <div className="flex justify-end">
+            <SortToggle active={sort} onChange={setSort} />
+          </div>
+        </div>
+
         <div className="max-w-[1500px] mx-auto grid grid-cols-1 2xl:grid-cols-[260px_1fr_260px] gap-6 items-start">
           <AIOverviewPanel track="news" />
 
           <div className="max-w-5xl mx-auto w-full">
-            <div className="flex flex-col gap-4 mb-8">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="min-w-0">
-                  <DomainFilter active={domain} onChange={setDomain} />
-                </div>
-                <TrackToggle active={track} onChange={setTrack} />
-              </div>
-              <div className="flex justify-end">
-                <SortToggle active={sort} onChange={setSort} />
-              </div>
-            </div>
-
             {loading ? (
               <p className="font-mono text-sm text-paper-dim py-12 text-center">
                 Loading signals...
