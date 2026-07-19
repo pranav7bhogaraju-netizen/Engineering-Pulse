@@ -49,6 +49,14 @@ export default function NavPanel() {
           </button>
 
           <div className="space-y-1 font-mono text-sm uppercase tracking-wide">
+            <Link
+              href="/"
+              onClick={close}
+              className="block py-3 text-paper hover:text-copper-bright transition-colors border-b border-paper-dim/10"
+            >
+              Home
+            </Link>
+
             <button
               onClick={() => setResourcesExpanded((v) => !v)}
               className="w-full flex items-center justify-between py-3 text-paper hover:text-copper-bright transition-colors border-b border-paper-dim/10"
@@ -71,9 +79,16 @@ export default function NavPanel() {
                 <Link
                   href="/resources/submit"
                   onClick={close}
-                  className="py-1.5 text-copper-bright hover:underline transition-colors border-b border-paper-dim/10 mb-1 pb-2.5"
+                  className="py-1.5 text-copper-bright hover:underline transition-colors"
                 >
                   + Submit a Resource
+                </Link>
+                <Link
+                  href="/resources"
+                  onClick={close}
+                  className="py-1.5 text-paper-dim hover:text-copper-bright transition-colors border-b border-paper-dim/10 mb-1 pb-2.5"
+                >
+                  All Resources
                 </Link>
                 {DOMAINS.map((d) => (
                   <Link
