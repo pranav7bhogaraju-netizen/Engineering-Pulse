@@ -72,9 +72,12 @@ function ResourcesContent() {
           </Link>
 
           <h1 className="font-display font-bold text-3xl md:text-4xl mb-2">Resources</h1>
-          <p className="text-paper-dim mb-8">
+          <p className="text-paper-dim mb-2">
             Curated courses, references, and cheat sheets — free and verified, organized by
             domain.
+          </p>
+          <p className="font-mono text-xs text-paper-dim/70 mb-8">
+            ▲ Upvotes move a resource higher on this page · ☆ Saves add it to your Study List
           </p>
 
           <div className="mb-8">
@@ -122,7 +125,11 @@ function ResourcesContent() {
                       className={`flex items-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                         r.user_voted ? "text-copper-bright" : "text-paper-dim hover:text-copper-bright"
                       }`}
-                      title={status !== "authenticated" ? "Sign in to vote" : undefined}
+                      title={
+                        status !== "authenticated"
+                          ? "Sign in to vote"
+                          : "Upvotes move a resource higher on this page"
+                      }
                     >
                       ▲ {r.vote_count}
                     </button>
@@ -134,7 +141,7 @@ function ResourcesContent() {
                       }`}
                       title={status !== "authenticated" ? "Sign in to save" : undefined}
                     >
-                      {r.user_saved ? "★ Saved" : "☆ Save"}
+                      {r.user_saved ? "★ Saved to Study List" : "☆ Save to Study List"}
                     </button>
                   </div>
                 </div>

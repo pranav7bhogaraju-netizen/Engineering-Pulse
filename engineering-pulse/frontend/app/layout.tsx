@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import NavPanel from "@/components/NavPanel";
 
 // Fonts loaded via a static <link> instead of next/font/google. next/font
 // fetches font files from Google during the BUILD itself, which failed
@@ -44,7 +45,12 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          <div className="fixed top-4 left-4 md:top-6 md:left-6 z-40">
+            <NavPanel />
+          </div>
+          {children}
+        </Providers>
       </body>
     </html>
   );

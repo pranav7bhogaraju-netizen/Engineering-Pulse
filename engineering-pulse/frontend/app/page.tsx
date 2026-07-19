@@ -6,7 +6,6 @@ import DomainFilter from "@/components/DomainFilter";
 import TrackToggle from "@/components/TrackToggle";
 import SortToggle from "@/components/SortToggle";
 import ThemeToggle from "@/components/ThemeToggle";
-import NavPanel from "@/components/NavPanel";
 import AuthStatus from "@/components/AuthStatus";
 import AIOverviewPanel from "@/components/AIOverview";
 import SignalCard from "@/components/SignalCard";
@@ -58,10 +57,6 @@ export default function Home() {
         <div className="crop-mark crop-mark--tr m-4" />
         <div className="crop-mark crop-mark--bl m-4" />
         <div className="crop-mark crop-mark--br m-4" />
-
-        <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10">
-          <NavPanel />
-        </div>
 
         <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex items-center gap-3">
           <Link
