@@ -14,6 +14,7 @@ export default function SubmitResource() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [reviewedDomains, setReviewedDomains] = useState<string[] | null>(null);
+  const [queuedMessage, setQueuedMessage] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,7 +34,11 @@ export default function SubmitResource() {
       return;
     }
 
-    setReviewedDomains(data.domains);
+    if (data.queued) {
+      setQueuedMessage(data.message);
+    } else {
+      setReviewedDomains(data.domains);
+    }
     setSubmitting(false);
   }
 
@@ -48,6 +53,25 @@ export default function SubmitResource() {
           </Link>{" "}
           to submit a resource.
         </p>
+      </main>
+    );
+  }
+
+  if (queuedMessage) {
+    return (
+      <main className="min-h-screen flex items-center justify-center px-6">
+        <div className="max-w-sm text-center">
+          <p className="font-mono text-xs uppercase tracking-widest text-copper-bright mb-3">
+            ⏳ Queued for review
+          </p>
+          <p className="text-paper-dim mb-6">{queuedMessage}</p>
+          <button
+            onClick={() => router.push("/resources")}
+            className="px-4 py-2 bg-copper text-ink rounded-sm font-mono text-sm hover:bg-copper-bright transition-colors"
+          >
+            Back to Resources
+          </button>
+        </div>
       </main>
     );
   }

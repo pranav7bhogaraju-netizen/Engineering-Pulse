@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { DOMAINS } from "@/lib/mockData";
 
 export default function NavPanel() {
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
   const [open, setOpen] = useState(false);
   const [resourcesExpanded, setResourcesExpanded] = useState(false);
 
@@ -125,6 +128,16 @@ export default function NavPanel() {
             >
               About
             </Link>
+
+            {isAdmin && (
+              <Link
+                href="/admin/resources"
+                onClick={close}
+                className="block py-3 text-copper-bright hover:underline transition-colors"
+              >
+                ⚙ Pending Review
+              </Link>
+            )}
           </div>
         </div>
       </nav>

@@ -43,13 +43,27 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Resource classification failed:", error);
     const isRateLimited = error instanceof Error && error.message.includes("429");
+
+    if (isRateLimited) {
+      // The AI reviewer being temporarily unavailable isn't the same as a
+      // genuine content rejection — queue it for manual review instead of
+      // failing outright, so a stranger's submission doesn't just vanish
+      // with no path forward during a busy day.
+      await pool.query(
+        `INSERT INTO resources (title, url, description, resource_type, source, submitted_by, status)
+         VALUES ($1, $2, $3, 'reference', 'community', $4, 'pending')`,
+        [title.trim(), parsedUrl.toString(), description?.trim() || "(no description provided)", userId]
+      );
+      return NextResponse.json({
+        queued: true,
+        message:
+          "The AI reviewer is busy right now, so this has been queued for manual review instead — it'll be looked at soon.",
+      });
+    }
+
     return NextResponse.json(
-      {
-        error: isRateLimited
-          ? "The AI reviewer is getting a lot of requests right now — please wait about a minute and try again."
-          : "Couldn't review this submission right now — try again in a moment.",
-      },
-      { status: isRateLimited ? 429 : 500 }
+      { error: "Couldn't review this submission right now — try again in a moment." },
+      { status: 500 }
     );
   }
 

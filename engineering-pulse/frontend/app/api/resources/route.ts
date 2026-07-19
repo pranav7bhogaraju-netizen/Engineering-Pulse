@@ -12,13 +12,13 @@ export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
 
-  const conditions: string[] = [];
+  const conditions: string[] = ["r.status = 'published'"];
   const values: string[] = [];
   if (domain && domain !== "all") {
     values.push(domain);
     conditions.push(`rd.domain_slug = $${values.length}`);
   }
-  const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const whereClause = `WHERE ${conditions.join(" AND ")}`;
 
   // userId is appended last regardless of whether a domain filter is present,
   // so its placeholder number depends on how many values came before it.
