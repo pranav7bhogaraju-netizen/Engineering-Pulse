@@ -9,14 +9,14 @@ export async function GET() {
   const result = await getPool().query(`
     SELECT
       t.id, t.title, t.body, t.created_at, t.linked_item_id,
-      u.name AS author_name,
+      u.name AS author_name, u.profile_image AS author_image,
       items.title AS linked_item_title,
       COUNT(p.id) AS reply_count
     FROM forum_threads t
     JOIN users u ON t.author_id = u.id
     LEFT JOIN items ON t.linked_item_id = items.id
     LEFT JOIN forum_posts p ON p.thread_id = t.id
-    GROUP BY t.id, u.name, items.title
+    GROUP BY t.id, u.name, u.profile_image, items.title
     ORDER BY t.created_at DESC
     LIMIT 50
   `);

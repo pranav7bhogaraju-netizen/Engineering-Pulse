@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
 
 interface Thread {
   id: number;
@@ -10,6 +11,7 @@ interface Thread {
   body: string;
   created_at: string;
   author_name: string;
+  author_image: string | null;
   linked_item_title: string | null;
   reply_count: string;
 }
@@ -96,7 +98,8 @@ export default function Blogs() {
                       Discussing: {thread.linked_item_title}
                     </p>
                   )}
-                  <p className="font-mono text-xs text-paper-dim">
+                  <p className="flex items-center gap-1.5 font-mono text-xs text-paper-dim">
+                    <Avatar name={thread.author_name} image={thread.author_image} size={16} />
                     {thread.author_name} · {timeAgo(thread.created_at)} · {thread.reply_count}{" "}
                     {thread.reply_count === "1" ? "reply" : "replies"}
                   </p>

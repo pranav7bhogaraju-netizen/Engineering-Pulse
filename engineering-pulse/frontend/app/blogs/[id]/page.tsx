@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
 
 interface Thread {
   id: number;
@@ -11,6 +12,7 @@ interface Thread {
   body: string;
   created_at: string;
   author_name: string;
+  author_image: string | null;
   linked_item_title: string | null;
   linked_item_url: string | null;
 }
@@ -19,6 +21,7 @@ interface Post {
   content: string;
   created_at: string;
   author_name: string;
+  author_image: string | null;
 }
 
 function timeAgo(iso: string) {
@@ -113,7 +116,8 @@ export default function ThreadPage() {
             Discussing: {thread.linked_item_title}
           </a>
         )}
-        <p className="font-mono text-xs text-paper-dim mb-6">
+        <p className="flex items-center gap-1.5 font-mono text-xs text-paper-dim mb-6">
+          <Avatar name={thread.author_name} image={thread.author_image} size={18} />
           {thread.author_name} · {timeAgo(thread.created_at)}
         </p>
         <p className="text-paper-dim leading-relaxed whitespace-pre-wrap mb-10 pb-10 border-b border-paper-dim/20">
@@ -123,7 +127,8 @@ export default function ThreadPage() {
         <div className="space-y-6 mb-10">
           {posts.map((post) => (
             <div key={post.id} className="border-l-2 border-paper-dim/20 pl-4">
-              <p className="font-mono text-xs text-paper-dim mb-1">
+              <p className="flex items-center gap-1.5 font-mono text-xs text-paper-dim mb-1">
+                <Avatar name={post.author_name} image={post.author_image} size={16} />
                 {post.author_name} · {timeAgo(post.created_at)}
               </p>
               <p className="text-paper-dim leading-relaxed whitespace-pre-wrap">{post.content}</p>
