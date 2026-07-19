@@ -8,7 +8,7 @@ import SortToggle from "@/components/SortToggle";
 import ThemeToggle from "@/components/ThemeToggle";
 import NavPanel from "@/components/NavPanel";
 import AuthStatus from "@/components/AuthStatus";
-import AIOverview from "@/components/AIOverview";
+import AIOverviewPanel from "@/components/AIOverview";
 import SignalCard from "@/components/SignalCard";
 import { SignalItem } from "@/lib/mockData";
 
@@ -119,42 +119,50 @@ export default function Home() {
         )}
       </section>
 
-      <AIOverview />
+      {/* Filters + feed, with AI overview panels as side columns on very
+          wide screens — normal document flow, so they scroll in and out
+          of view along with this section, not fixed to the viewport. */}
+      <section className="px-6 py-10">
+        <div className="max-w-[1500px] mx-auto grid grid-cols-1 2xl:grid-cols-[260px_1fr_260px] gap-6 items-start">
+          <AIOverviewPanel track="news" />
 
-      {/* Filters + feed */}
-      <section className="max-w-5xl mx-auto px-6 py-10">
-        <div className="flex flex-col gap-4 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="min-w-0">
-              <DomainFilter active={domain} onChange={setDomain} />
+          <div className="max-w-5xl mx-auto w-full">
+            <div className="flex flex-col gap-4 mb-8">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="min-w-0">
+                  <DomainFilter active={domain} onChange={setDomain} />
+                </div>
+                <TrackToggle active={track} onChange={setTrack} />
+              </div>
+              <div className="flex justify-end">
+                <SortToggle active={sort} onChange={setSort} />
+              </div>
             </div>
-            <TrackToggle active={track} onChange={setTrack} />
-          </div>
-          <div className="flex justify-end">
-            <SortToggle active={sort} onChange={setSort} />
-          </div>
-        </div>
 
-        {loading ? (
-          <p className="font-mono text-sm text-paper-dim py-12 text-center">
-            Loading signals...
-          </p>
-        ) : error ? (
-          <p className="font-mono text-sm text-copper py-12 text-center max-w-md mx-auto">
-            {error}
-          </p>
-        ) : items.length === 0 ? (
-          <p className="font-mono text-sm text-paper-dim py-12 text-center max-w-md mx-auto">
-            No signals in the database yet — run <code>python ingest.py</code>{" "}
-            in the ingestion folder to pull real content.
-          </p>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-4">
-            {items.map((item) => (
-              <SignalCard key={item.id} item={item} />
-            ))}
+            {loading ? (
+              <p className="font-mono text-sm text-paper-dim py-12 text-center">
+                Loading signals...
+              </p>
+            ) : error ? (
+              <p className="font-mono text-sm text-copper py-12 text-center max-w-md mx-auto">
+                {error}
+              </p>
+            ) : items.length === 0 ? (
+              <p className="font-mono text-sm text-paper-dim py-12 text-center max-w-md mx-auto">
+                No signals in the database yet — run <code>python ingest.py</code>{" "}
+                in the ingestion folder to pull real content.
+              </p>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                {items.map((item) => (
+                  <SignalCard key={item.id} item={item} />
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          <AIOverviewPanel track="technical" />
+        </div>
       </section>
     </main>
   );
