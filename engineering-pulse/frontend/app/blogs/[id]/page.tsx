@@ -11,6 +11,7 @@ interface Thread {
   title: string;
   body: string;
   created_at: string;
+  author_id: string;
   author_name: string;
   author_image: string | null;
   linked_item_title: string | null;
@@ -20,6 +21,7 @@ interface Post {
   id: number;
   content: string;
   created_at: string;
+  author_id: string;
   author_name: string;
   author_image: string | null;
 }
@@ -116,10 +118,16 @@ export default function ThreadPage() {
             Discussing: {thread.linked_item_title}
           </a>
         )}
-        <p className="flex items-center gap-1.5 font-mono text-xs text-paper-dim mb-6">
-          <Avatar name={thread.author_name} image={thread.author_image} size={18} />
-          {thread.author_name} · {timeAgo(thread.created_at)}
-        </p>
+        <div className="flex items-center gap-3 mb-6">
+          <Link
+            href={`/profile/${thread.author_id}`}
+            className="flex items-center gap-1.5 font-mono text-xs text-paper-dim hover:text-copper-bright transition-colors"
+          >
+            <Avatar name={thread.author_name} image={thread.author_image} size={18} />
+            {thread.author_name}
+          </Link>
+          <span className="font-mono text-xs text-paper-dim">· {timeAgo(thread.created_at)}</span>
+        </div>
         <p className="text-paper-dim leading-relaxed whitespace-pre-wrap mb-10 pb-10 border-b border-paper-dim/20">
           {thread.body}
         </p>
@@ -127,10 +135,16 @@ export default function ThreadPage() {
         <div className="space-y-6 mb-10">
           {posts.map((post) => (
             <div key={post.id} className="border-l-2 border-paper-dim/20 pl-4">
-              <p className="flex items-center gap-1.5 font-mono text-xs text-paper-dim mb-1">
-                <Avatar name={post.author_name} image={post.author_image} size={16} />
-                {post.author_name} · {timeAgo(post.created_at)}
-              </p>
+              <div className="flex items-center gap-3 mb-1">
+                <Link
+                  href={`/profile/${post.author_id}`}
+                  className="flex items-center gap-1.5 font-mono text-xs text-paper-dim hover:text-copper-bright transition-colors"
+                >
+                  <Avatar name={post.author_name} image={post.author_image} size={16} />
+                  {post.author_name}
+                </Link>
+                <span className="font-mono text-xs text-paper-dim">· {timeAgo(post.created_at)}</span>
+              </div>
               <p className="text-paper-dim leading-relaxed whitespace-pre-wrap">{post.content}</p>
             </div>
           ))}

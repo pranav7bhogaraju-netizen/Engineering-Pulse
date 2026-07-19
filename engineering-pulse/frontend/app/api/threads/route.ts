@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const result = await getPool().query(`
     SELECT
-      t.id, t.title, t.body, t.created_at, t.linked_item_id,
+      t.id, t.title, t.body, t.created_at, t.linked_item_id, t.author_id,
       u.name AS author_name, u.profile_image AS author_image,
       items.title AS linked_item_title,
       COUNT(p.id) AS reply_count

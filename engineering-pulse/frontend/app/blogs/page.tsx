@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
 
@@ -10,6 +11,7 @@ interface Thread {
   title: string;
   body: string;
   created_at: string;
+  author_id: string;
   author_name: string;
   author_image: string | null;
   linked_item_title: string | null;
@@ -25,6 +27,7 @@ function timeAgo(iso: string) {
 
 export default function Blogs() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,10 +90,10 @@ export default function Blogs() {
           ) : (
             <div className="space-y-3">
               {threads.map((thread) => (
-                <Link
+                <div
                   key={thread.id}
-                  href={`/blogs/${thread.id}`}
-                  className="block border border-paper-dim/20 rounded-sm p-4 hover:border-copper/50 transition-colors"
+                  onClick={() => router.push(`/blogs/${thread.id}`)}
+                  className="block border border-paper-dim/20 rounded-sm p-4 hover:border-copper/50 transition-colors cursor-pointer"
                 >
                   <h2 className="font-display font-medium text-lg mb-1">{thread.title}</h2>
                   {thread.linked_item_title && (
@@ -98,12 +101,20 @@ export default function Blogs() {
                       Discussing: {thread.linked_item_title}
                     </p>
                   )}
-                  <p className="flex items-center gap-1.5 font-mono text-xs text-paper-dim">
+                  <Link
+                    href={`/profile/${thread.author_id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 font-mono text-xs text-paper-dim hover:text-copper-bright transition-colors"
+                  >
                     <Avatar name={thread.author_name} image={thread.author_image} size={16} />
-                    {thread.author_name} · {timeAgo(thread.created_at)} · {thread.reply_count}{" "}
+                    {thread.author_name}
+                  </Link>
+                  <span className="font-mono text-xs text-paper-dim">
+                    {" "}
+                    · {timeAgo(thread.created_at)} · {thread.reply_count}{" "}
                     {thread.reply_count === "1" ? "reply" : "replies"}
-                  </p>
-                </Link>
+                  </span>
+                </div>
               ))}
             </div>
           )}

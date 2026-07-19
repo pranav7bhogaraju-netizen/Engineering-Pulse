@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "You must be signed in." }, { status: 401 });
   }
 
-  const { dataUrl } = await request.json();
+  const { dataUrl, prompt } = await request.json();
 
   if (!dataUrl || typeof dataUrl !== "string") {
     return NextResponse.json({ error: "No image provided." }, { status: 400 });
@@ -26,7 +26,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Image is too large — please use something under 2MB." }, { status: 400 });
   }
 
-  await getPool().query("UPDATE users SET profile_image = $1 WHERE id = $2", [dataUrl, userId]);
+  // Explicitly set (not COALESCE) — a regular upload should clear any
+  // leftover prompt from a previous AI-generated picture, not preserve it.
+  await getPool().query(
+    "UPDATE users SET profile_image = $1, profile_image_prompt = $2 WHERE id = $3",
+    [dataUrl, prompt ?? null, userId]
+  );
 
   return NextResponse.json({ success: true });
 }

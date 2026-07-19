@@ -3,13 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import ExpandableProfilePicture from "@/components/ExpandableProfilePicture";
 
 interface Profile {
   name: string;
   email: string;
   profile_image: string | null;
+  profile_image_prompt: string | null;
   display_phrase: string | null;
   about: string | null;
+  created_at: string;
 }
 
 interface ChatMessage {
@@ -68,6 +71,7 @@ export default function ProfilePage() {
     };
   }, [generating]);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function load() {
@@ -127,6 +131,7 @@ export default function ProfilePage() {
       setChatMessages((prev) => [...prev, { role: "ai", text: data.error ?? "Something went wrong." }]);
     } else {
       setPendingImage(data.dataUrl);
+      setPendingPrompt(promptSent);
       setChatMessages((prev) => [
         ...prev,
         { role: "ai", text: "Here's what I generated:", imageDataUrl: data.dataUrl },
@@ -140,11 +145,12 @@ export default function ProfilePage() {
     await fetch("/api/profile/upload", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dataUrl: pendingImage }),
+      body: JSON.stringify({ dataUrl: pendingImage, prompt: pendingPrompt }),
     });
     setAiPanelOpen(false);
     setChatMessages([]);
     setPendingImage(null);
+    setPendingPrompt(null);
     load();
   }
 
@@ -216,18 +222,12 @@ export default function ProfilePage() {
               Profile Picture
             </p>
             <div className="flex items-center gap-5">
-              {profile.profile_image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.profile_image}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover border border-paper-dim/20"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-ink-raised border border-paper-dim/20 flex items-center justify-center font-mono text-lg text-paper-dim">
-                  {getInitialsLocal(profile.name, profile.email)}
-                </div>
-              )}
+              <ExpandableProfilePicture
+                imageUrl={profile.profile_image}
+                prompt={profile.profile_image_prompt}
+                fallbackInitials={getInitialsLocal(profile.name, profile.email)}
+                size={80}
+              />
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => fileInputRef.current?.click()}

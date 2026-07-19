@@ -13,7 +13,7 @@ export async function GET() {
   }
 
   const result = await getPool().query(
-    "SELECT name, email, profile_image, display_phrase, about FROM users WHERE id = $1",
+    "SELECT name, email, profile_image, profile_image_prompt, display_phrase, about, created_at FROM users WHERE id = $1",
     [userId]
   );
 

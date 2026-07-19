@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const threadResult = await getPool().query(
     `
-    SELECT t.id, t.title, t.body, t.created_at, t.linked_item_id,
+    SELECT t.id, t.title, t.body, t.created_at, t.linked_item_id, t.author_id,
            u.name AS author_name, u.profile_image AS author_image,
            items.title AS linked_item_title, items.url AS linked_item_url
     FROM forum_threads t
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   const postsResult = await getPool().query(
     `
-    SELECT p.id, p.content, p.created_at, u.name AS author_name, u.profile_image AS author_image
+    SELECT p.id, p.content, p.created_at, p.author_id, u.name AS author_name, u.profile_image AS author_image
     FROM forum_posts p
     JOIN users u ON p.author_id = u.id
     WHERE p.thread_id = $1
