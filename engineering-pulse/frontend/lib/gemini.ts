@@ -100,33 +100,115 @@ export interface ResourceClassification {
   reason?: string;
 }
 
+interface FetchedPageInfo {
+  title: string | null;
+  description: string | null;
+  textSample: string | null;
+  fetchFailed: boolean;
+}
+
+// Fetches the actual linked page and extracts its real title/description
+// from <title> and Open Graph meta tags — present even on JS-heavy SPAs
+// (YouTube, etc.), since platforms rely on them for link-preview cards.
+// This is what lets the classifier catch someone claiming a link is about
+// one thing when the page is actually about something else entirely.
+async function fetchPageInfo(url: string): Promise<FetchedPageInfo> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        // A browser-like UA reduces the chance of being blocked outright;
+        // this is only reading public metadata, same as any link-preview
+        // bot (Slack, Discord, etc.) would.
+        "User-Agent":
+          "Mozilla/5.0 (compatible; EngineeringPulseBot/1.0; +https://engineering-pulse.vercel.app)",
+      },
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) return { title: null, description: null, textSample: null, fetchFailed: true };
+
+    const html = await res.text();
+
+    const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+    const ogTitleMatch = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']*)["']/i);
+    const ogDescMatch = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']*)["']/i);
+    const metaDescMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i);
+
+    const title = (ogTitleMatch?.[1] || titleMatch?.[1] || "").trim() || null;
+    const description = (ogDescMatch?.[1] || metaDescMatch?.[1] || "").trim() || null;
+
+    // Rough visible-text sample as a fallback signal, stripping tags/scripts
+    // crudely — good enough for the model to get a general sense of the
+    // page, not meant to be a clean extraction.
+    const textSample = html
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 1500);
+
+    return { title, description, textSample: textSample || null, fetchFailed: false };
+  } catch {
+    return { title: null, description: null, textSample: null, fetchFailed: true };
+  }
+}
+
 export async function classifyResourceSubmission(
   title: string,
   url: string,
   userDescription: string
 ): Promise<ResourceClassification> {
+  const page = await fetchPageInfo(url);
+
+  const verificationBlock = page.fetchFailed
+    ? `Could not fetch the actual page content (it may block bots, require
+login, or be a heavy JS app with no server-rendered content). Since you
+can't verify the claim against real content, be MORE skeptical than usual
+— only approve if the title/URL/description combination is genuinely
+plausible and internally consistent, with no red flags.`
+    : `Here's what was ACTUALLY found at that URL — use this to verify the
+user's claim, don't just trust their title:
+Actual page title: ${page.title || "(none found)"}
+Actual page description: ${page.description || "(none found)"}
+Actual page text sample: ${page.textSample || "(none found)"}
+
+If the user's claimed title/description doesn't genuinely match what's
+actually on the page, this is a MISMATCH and must be rejected — this is
+the single most important check. A user claiming a video is about
+"Thermodynamics" when the actual page is a sports highlights reel is
+exactly the kind of submission to reject, with the reason explaining the
+mismatch clearly.`;
+
   const prompt = `You are reviewing a user-submitted resource for an
 engineering education site. Evaluate whether it's a genuine, relevant
 resource for engineering students/professionals (not spam, not off-topic,
-not a broken/placeholder link).
+not a broken/placeholder link, and NOT mislabeled/deceptive).
 
-Title: ${title}
+User's claimed title: ${title}
 URL: ${url}
-User's description: ${userDescription || "(none provided)"}
+User's claimed description: ${userDescription || "(none provided)"}
+
+${verificationBlock}
 
 Respond with ONLY a JSON object, no markdown fences, no other text:
 {
   "relevant": true or false,
   "domains": [array of applicable slugs from: ${VALID_DOMAINS.join(", ")} — empty array if not relevant],
   "resource_type": one of ${VALID_TYPES.join(", ")} (best guess),
-  "description": a clear 1-sentence description (use the user's if it's good, otherwise write one based on the title/URL),
-  "reason": if relevant is false, a brief reason why (e.g. "not engineering-related", "appears to be spam")
+  "description": a clear 1-sentence description based on the ACTUAL content (use the user's if it's accurate, otherwise write one based on the real page content),
+  "reason": if relevant is false, a specific reason why (e.g. "title claims this is about thermodynamics, but the actual page is a sports highlights video")
 }
 
-Be reasonably permissive — err toward "relevant: true" for anything
-plausibly educational or useful to an engineer, even if niche. Only reject
-things that are clearly spam, unrelated to engineering entirely, or
-obviously broken/placeholder submissions.`;
+Be reasonably permissive for genuinely relevant, accurately-described
+content — err toward "relevant: true" for anything plausibly educational
+or useful to an engineer, even if niche. But be strict about mismatches
+between what's claimed and what's actually there — that's deceptive
+regardless of whether the real content happens to be spam or not.`;
 
   const result = await callGemini(prompt, 0.2);
   const match = result.match(/\{[\s\S]*\}/);
