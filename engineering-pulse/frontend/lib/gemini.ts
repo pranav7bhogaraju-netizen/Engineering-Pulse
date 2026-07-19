@@ -1,16 +1,20 @@
 // Lightweight wrapper around Gemini's REST API — no SDK dependency needed,
-// just fetch. Uses the free-tier Gemini 2.5 Flash text model for both plain
-// text suggestions and SVG "art" generation (SVG is markup/text, so a text
-// model can write it directly — no paid image-generation model needed).
+// just fetch. Uses the free-tier Gemini 2.5 Flash text model.
 //
-// AI overviews use a SEPARATE API key (GEMINI_API_KEY_OVERVIEW) from a
-// different Google AI Studio project, so its own daily quota pool is
-// completely independent — heavy overview usage can never block resource
-// review, profile pictures, or display phrases, which all use the main
-// GEMINI_API_KEY.
+// Each feature area uses its own API key from a separate Google AI Studio
+// project, so each has a fully independent daily quota pool — heavy usage
+// in one feature can never block another:
+//   GEMINI_API_KEY           — fallback, used if a feature-specific key isn't set
+//   GEMINI_API_KEY_PROFILE   — profile picture generation + display phrase suggestion
+//   GEMINI_API_KEY_REVIEW    — resource submission review
+//   GEMINI_API_KEY_OVERVIEW  — feed overviews
 
 const GEMINI_MODEL = "gemini-flash-latest";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+function resolveKey(specific?: string): string | undefined {
+  return specific || process.env.GEMINI_API_KEY;
+}
 
 async function callGemini(prompt: string, temperature = 0.7, apiKey?: string): Promise<string> {
   const key = apiKey ?? process.env.GEMINI_API_KEY;
@@ -54,7 +58,7 @@ of the TONE to aim for (don't reuse these, just match the energy):
 
 Respond with ONLY the phrase itself — no quotes, no explanation, no markdown.`;
 
-  const result = await callGemini(prompt, 1.0);
+  const result = await callGemini(prompt, 1.0, resolveKey(process.env.GEMINI_API_KEY_PROFILE));
   return result.trim().replace(/^["']|["']$/g, "");
 }
 
@@ -72,7 +76,7 @@ Requirements:
 - Use a color palette fitting a technical/engineering aesthetic: navy
   (#0E1A2B), copper/amber (#C77B3B), and muted green (#4C8066) work well`;
 
-  const result = await callGemini(prompt);
+  const result = await callGemini(prompt, 0.7, resolveKey(process.env.GEMINI_API_KEY_PROFILE));
 
   // Strip any markdown fences the model might add despite instructions,
   // and extract just the <svg>...</svg> block defensively.
@@ -217,7 +221,7 @@ or useful to an engineer, even if niche. But be strict about mismatches
 between what's claimed and what's actually there — that's deceptive
 regardless of whether the real content happens to be spam or not.`;
 
-  const result = await callGemini(prompt, 0.2);
+  const result = await callGemini(prompt, 0.2, resolveKey(process.env.GEMINI_API_KEY_REVIEW));
   const match = result.match(/\{[\s\S]*\}/);
   if (!match) {
     throw new Error("Gemini did not return valid JSON.");
@@ -259,11 +263,6 @@ topics covered instead of forcing a connection. Keep it factual and
 concise — no hype, no exclamation points. Respond with ONLY the overview
 text, no preamble.`;
 
-  // Uses a separate API key/project so overview generation has its own
-  // independent daily quota — falls back to the shared key if the
-  // dedicated one hasn't been configured yet, so this doesn't hard-break
-  // if someone hasn't set it up.
-  const overviewKey = process.env.GEMINI_API_KEY_OVERVIEW || process.env.GEMINI_API_KEY;
-  const result = await callGemini(prompt, 0.4, overviewKey);
+  const result = await callGemini(prompt, 0.4, resolveKey(process.env.GEMINI_API_KEY_OVERVIEW));
   return result.trim();
 }
