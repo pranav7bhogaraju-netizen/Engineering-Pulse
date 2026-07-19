@@ -2,16 +2,23 @@
 // just fetch. Uses the free-tier Gemini 2.5 Flash text model for both plain
 // text suggestions and SVG "art" generation (SVG is markup/text, so a text
 // model can write it directly — no paid image-generation model needed).
+//
+// AI overviews use a SEPARATE API key (GEMINI_API_KEY_OVERVIEW) from a
+// different Google AI Studio project, so its own daily quota pool is
+// completely independent — heavy overview usage can never block resource
+// review, profile pictures, or display phrases, which all use the main
+// GEMINI_API_KEY.
 
 const GEMINI_MODEL = "gemini-flash-latest";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-async function callGemini(prompt: string, temperature = 0.7): Promise<string> {
-  if (!process.env.GEMINI_API_KEY) {
+async function callGemini(prompt: string, temperature = 0.7, apiKey?: string): Promise<string> {
+  const key = apiKey ?? process.env.GEMINI_API_KEY;
+  if (!key) {
     throw new Error("GEMINI_API_KEY is not set.");
   }
 
-  const res = await fetch(`${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`, {
+  const res = await fetch(`${GEMINI_URL}?key=${key}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -228,4 +235,35 @@ regardless of whether the real content happens to be spam or not.`;
     description: typeof parsed.description === "string" ? parsed.description : userDescription,
     reason: typeof parsed.reason === "string" ? parsed.reason : undefined,
   };
+}
+
+export async function generateFeedOverview(
+  track: "technical" | "news",
+  sortMode: "top" | "new",
+  titles: string[]
+): Promise<string> {
+  const trackLabel = track === "technical" ? "technical papers" : "engineering news";
+  const rankingContext =
+    sortMode === "top" ? "ranked highest by engagement/importance" : "the most recently published";
+  const bulleted = titles.map((t) => `- ${t}`).join("\n");
+
+  const prompt = `You are writing a brief overview of today's ${rankingContext} ${trackLabel}
+on an engineering aggregator site. Here are the headlines:
+
+${bulleted}
+
+Write a 2-3 sentence overview identifying any real patterns or themes
+across these items (e.g. a domain that's especially active, a recurring
+topic). If there's no clear pattern, just briefly describe the mix of
+topics covered instead of forcing a connection. Keep it factual and
+concise — no hype, no exclamation points. Respond with ONLY the overview
+text, no preamble.`;
+
+  // Uses a separate API key/project so overview generation has its own
+  // independent daily quota — falls back to the shared key if the
+  // dedicated one hasn't been configured yet, so this doesn't hard-break
+  // if someone hasn't set it up.
+  const overviewKey = process.env.GEMINI_API_KEY_OVERVIEW || process.env.GEMINI_API_KEY;
+  const result = await callGemini(prompt, 0.4, overviewKey);
+  return result.trim();
 }
