@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -16,6 +17,18 @@ function getInitials(name: string | null | undefined, email: string | null | und
 export default function AuthStatus() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (status === "loading") {
     return <div className="w-7 h-7" />; // reserve space, avoid layout shift
@@ -24,13 +37,33 @@ export default function AuthStatus() {
   if (status === "authenticated") {
     const initials = getInitials(session.user?.name, session.user?.email);
     return (
-      <button
-        onClick={() => signOut({ callbackUrl: pathname })}
-        title={`Signed in as ${session.user?.name ?? session.user?.email} — click to sign out`}
-        className="w-7 h-7 flex items-center justify-center rounded-full bg-copper text-ink font-mono text-[11px] font-medium hover:bg-copper-bright transition-colors"
-      >
-        {initials}
-      </button>
+      <div className="relative" ref={containerRef}>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          title={session.user?.name ?? session.user?.email ?? undefined}
+          className="w-7 h-7 flex items-center justify-center rounded-full bg-copper text-ink font-mono text-[11px] font-medium hover:bg-copper-bright transition-colors"
+        >
+          {initials}
+        </button>
+
+        {open && (
+          <div className="absolute right-0 top-9 w-40 bg-ink-raised border border-paper-dim/20 rounded-sm shadow-lg z-50 overflow-hidden">
+            <Link
+              href="/profile"
+              onClick={() => setOpen(false)}
+              className="block px-3 py-2.5 font-mono text-xs text-paper-dim hover:text-copper-bright hover:bg-ink transition-colors"
+            >
+              View Profile
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: pathname })}
+              className="w-full text-left px-3 py-2.5 font-mono text-xs text-red-400 hover:bg-ink transition-colors border-t border-paper-dim/10"
+            >
+              ● Sign out
+            </button>
+          </div>
+        )}
+      </div>
     );
   }
 
