@@ -7,13 +7,6 @@ interface OverviewData {
   generated_at: string;
 }
 
-function timeAgo(iso: string) {
-  const hours = Math.round((Date.now() - new Date(iso).getTime()) / 3600000);
-  if (hours < 1) return "updated just now";
-  if (hours === 1) return "updated 1h ago";
-  return `updated ${hours}h ago`;
-}
-
 export default function AIOverviewPanel({
   track,
   sort,
@@ -47,8 +40,7 @@ export default function AIOverviewPanel({
         <p className="font-mono text-[10px] text-paper-dim/70 uppercase tracking-wide mb-2">
           {sortLabel}
         </p>
-        <p className="text-xs text-paper-dim leading-relaxed mb-2">{data.summary}</p>
-        <p className="font-mono text-[10px] text-paper-dim/70">{timeAgo(data.generated_at)}</p>
+        <p className="text-xs text-paper-dim leading-relaxed">{data.summary}</p>
       </div>
     </div>
   );
