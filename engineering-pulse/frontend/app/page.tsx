@@ -7,7 +7,8 @@ import TrackToggle from "@/components/TrackToggle";
 import SortToggle from "@/components/SortToggle";
 import ThemeToggle from "@/components/ThemeToggle";
 import AuthStatus from "@/components/AuthStatus";
-import AIOverviewPanel from "@/components/AIOverview";
+import AIOverviewAccordion from "@/components/AIOverview";
+import AIOverviewSidePanel from "@/components/AIOverviewSidePanel";
 import SignalCard from "@/components/SignalCard";
 import { SignalItem } from "@/lib/mockData";
 
@@ -114,9 +115,11 @@ export default function Home() {
         )}
       </section>
 
-      {/* Filters + feed, with AI overview panels as side columns on very
-          wide screens — normal document flow, so they scroll in and out
-          of view along with this section, not fixed to the viewport. */}
+      {/* Filters + feed. AI overview shows as slim side panels when the
+          viewport is wide enough to have real margin space (2xl+), or as
+          a collapsible accordion above the feed on anything narrower —
+          pure CSS breakpoint switch, so exactly one variant is visible at
+          any given width, no JS/layout-shift involved. */}
       <section className="px-6 py-10">
         {/* Filters sit full-width above, outside the 3-column grid, so the
             grid below starts exactly at the card row — that's what keeps
@@ -135,9 +138,15 @@ export default function Home() {
         </div>
 
         <div className="max-w-[1500px] mx-auto grid grid-cols-1 2xl:grid-cols-[260px_1fr_260px] gap-6 items-start">
-          <AIOverviewPanel track="news" sort={sort} />
+          <div className="hidden 2xl:block">
+            <AIOverviewSidePanel track="news" sort={sort} />
+          </div>
 
           <div className="max-w-5xl mx-auto w-full">
+            <div className="2xl:hidden">
+              <AIOverviewAccordion sort={sort} />
+            </div>
+
             {loading ? (
               <p className="font-mono text-sm text-paper-dim py-12 text-center">
                 Loading signals...
@@ -160,7 +169,9 @@ export default function Home() {
             )}
           </div>
 
-          <AIOverviewPanel track="technical" sort={sort} />
+          <div className="hidden 2xl:block">
+            <AIOverviewSidePanel track="technical" sort={sort} />
+          </div>
         </div>
       </section>
     </main>
