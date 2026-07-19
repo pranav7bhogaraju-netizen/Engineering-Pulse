@@ -13,6 +13,7 @@ interface Resource {
   description: string;
   resource_type: string;
   source: string;
+  submitted_by: string | null;
   domains: string[];
   vote_count: string;
   user_voted: boolean;
@@ -29,7 +30,9 @@ const TYPE_LABELS: Record<string, string> = {
 
 function ResourcesContent() {
   const searchParams = useSearchParams();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
   const [domain, setDomain] = useState(searchParams.get("domain") ?? "all");
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +62,12 @@ function ResourcesContent() {
     if (status !== "authenticated") return;
     await fetch(`/api/resources/${id}/save`, { method: "POST" });
     load();
+  }
+
+  async function handleDelete(id: number) {
+    if (!confirm("Delete this resource? This can't be undone.")) return;
+    const res = await fetch(`/api/resources/${id}`, { method: "DELETE" });
+    if (res.ok) load();
   }
 
   return (
@@ -160,6 +169,15 @@ function ResourcesContent() {
                     >
                       {r.user_saved ? "★ Saved to Study List" : "☆ Save to Study List"}
                     </button>
+                    {(isAdmin || (userId && r.submitted_by === userId)) && (
+                      <button
+                        onClick={() => handleDelete(r.id)}
+                        className="ml-auto text-paper-dim hover:text-copper transition-colors"
+                        title="Delete this resource"
+                      >
+                        🗑
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

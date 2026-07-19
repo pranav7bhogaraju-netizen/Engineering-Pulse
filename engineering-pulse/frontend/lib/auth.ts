@@ -75,6 +75,9 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         (session.user as { id?: string }).id = token.id as string;
+        (session.user as { isAdmin?: boolean }).isAdmin =
+          !!session.user.email &&
+          session.user.email.toLowerCase() === (process.env.ADMIN_EMAIL ?? "").toLowerCase();
       }
       return session;
     },

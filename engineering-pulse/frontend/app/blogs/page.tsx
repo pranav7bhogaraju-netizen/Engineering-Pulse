@@ -27,16 +27,29 @@ function timeAgo(iso: string) {
 
 export default function Blogs() {
   const { data: session, status } = useSession();
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
   const router = useRouter();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  function load() {
     fetch("/api/threads")
       .then((res) => res.json())
       .then((data) => setThreads(data.threads ?? []))
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    load();
   }, []);
+
+  async function handleDeleteThread(e: React.MouseEvent, id: number) {
+    e.stopPropagation();
+    if (!confirm("Delete this thread and all its replies? This can't be undone.")) return;
+    const res = await fetch(`/api/threads/${id}`, { method: "DELETE" });
+    if (res.ok) load();
+  }
 
   return (
     <main className="min-h-screen">
@@ -101,19 +114,32 @@ export default function Blogs() {
                       Discussing: {thread.linked_item_title}
                     </p>
                   )}
-                  <Link
-                    href={`/profile/${thread.author_id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1.5 font-mono text-xs text-paper-dim hover:text-copper-bright transition-colors"
-                  >
-                    <Avatar name={thread.author_name} image={thread.author_image} size={16} />
-                    {thread.author_name}
-                  </Link>
-                  <span className="font-mono text-xs text-paper-dim">
-                    {" "}
-                    · {timeAgo(thread.created_at)} · {thread.reply_count}{" "}
-                    {thread.reply_count === "1" ? "reply" : "replies"}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Link
+                        href={`/profile/${thread.author_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1.5 font-mono text-xs text-paper-dim hover:text-copper-bright transition-colors"
+                      >
+                        <Avatar name={thread.author_name} image={thread.author_image} size={16} />
+                        {thread.author_name}
+                      </Link>
+                      <span className="font-mono text-xs text-paper-dim">
+                        {" "}
+                        · {timeAgo(thread.created_at)} · {thread.reply_count}{" "}
+                        {thread.reply_count === "1" ? "reply" : "replies"}
+                      </span>
+                    </div>
+                    {(isAdmin || (userId && thread.author_id === userId)) && (
+                      <button
+                        onClick={(e) => handleDeleteThread(e, thread.id)}
+                        className="font-mono text-xs text-paper-dim hover:text-copper transition-colors"
+                        title="Delete this thread"
+                      >
+                        🗑
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
