@@ -18,11 +18,11 @@ interface ChatMessage {
   imageDataUrl?: string;
 }
 
-const GENERATING_MESSAGES = [
-  "Your masterpiece is at work...",
-  "Mixing colors...",
-  "Sketching the shapes...",
-  "Adding the finishing touches...",
+const GENERATING_MESSAGES: { text: string; duration: number }[] = [
+  { text: "Your masterpiece is at work...", duration: 4000 },
+  { text: "Mixing colors...", duration: 3500 },
+  { text: "Sketching the shapes...", duration: 3500 },
+  { text: "Adding the finishing touches...", duration: 5000 },
 ];
 
 export default function ProfilePage() {
@@ -40,20 +40,32 @@ export default function ProfilePage() {
   const [chatPrompt, setChatPrompt] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [generating, setGenerating] = useState(false);
-  const [generatingMessage, setGeneratingMessage] = useState(GENERATING_MESSAGES[0]);
+  const [generatingMessage, setGeneratingMessage] = useState(GENERATING_MESSAGES[0].text);
 
-  // Cycles through a few different status lines while waiting, so it
-  // doesn't feel stuck on one static phrase for what might be several
-  // seconds.
+  // Advances through the phrases with each one's own duration, rather than
+  // a fixed interval — later phrases linger longer, roughly matching how
+  // generation actually tends to feel (slow start, longer stretch near the
+  // end). Stops on the last phrase instead of looping if it runs long.
   useEffect(() => {
     if (!generating) return;
+    setGeneratingMessage(GENERATING_MESSAGES[0].text);
+
+    let cancelled = false;
     let i = 0;
-    setGeneratingMessage(GENERATING_MESSAGES[0]);
-    const interval = setInterval(() => {
-      i = (i + 1) % GENERATING_MESSAGES.length;
-      setGeneratingMessage(GENERATING_MESSAGES[i]);
-    }, 1800);
-    return () => clearInterval(interval);
+    function scheduleNext() {
+      if (i >= GENERATING_MESSAGES.length - 1) return;
+      setTimeout(() => {
+        if (cancelled) return;
+        i += 1;
+        setGeneratingMessage(GENERATING_MESSAGES[i].text);
+        scheduleNext();
+      }, GENERATING_MESSAGES[i].duration);
+    }
+    scheduleNext();
+
+    return () => {
+      cancelled = true;
+    };
   }, [generating]);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
