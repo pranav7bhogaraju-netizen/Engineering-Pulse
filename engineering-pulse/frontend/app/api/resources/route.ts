@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
   const query = `
     SELECT
-      r.id, r.title, r.url, r.description, r.resource_type,
+      r.id, r.title, r.url, r.description, r.resource_type, r.source,
       COALESCE(
         array_agg(DISTINCT rd.domain_slug) FILTER (WHERE rd.domain_slug IS NOT NULL),
         '{}'

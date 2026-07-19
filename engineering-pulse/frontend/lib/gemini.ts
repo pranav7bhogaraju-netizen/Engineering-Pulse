@@ -88,3 +88,62 @@ Requirements:
 
   return svg;
 }
+
+const VALID_DOMAINS = ["ee", "me", "ce", "aero", "chem", "materials", "biomed", "cs"];
+const VALID_TYPES = ["course", "video", "reference", "tool", "database"];
+
+export interface ResourceClassification {
+  relevant: boolean;
+  domains: string[];
+  resource_type: string;
+  description: string;
+  reason?: string;
+}
+
+export async function classifyResourceSubmission(
+  title: string,
+  url: string,
+  userDescription: string
+): Promise<ResourceClassification> {
+  const prompt = `You are reviewing a user-submitted resource for an
+engineering education site. Evaluate whether it's a genuine, relevant
+resource for engineering students/professionals (not spam, not off-topic,
+not a broken/placeholder link).
+
+Title: ${title}
+URL: ${url}
+User's description: ${userDescription || "(none provided)"}
+
+Respond with ONLY a JSON object, no markdown fences, no other text:
+{
+  "relevant": true or false,
+  "domains": [array of applicable slugs from: ${VALID_DOMAINS.join(", ")} — empty array if not relevant],
+  "resource_type": one of ${VALID_TYPES.join(", ")} (best guess),
+  "description": a clear 1-sentence description (use the user's if it's good, otherwise write one based on the title/URL),
+  "reason": if relevant is false, a brief reason why (e.g. "not engineering-related", "appears to be spam")
+}
+
+Be reasonably permissive — err toward "relevant: true" for anything
+plausibly educational or useful to an engineer, even if niche. Only reject
+things that are clearly spam, unrelated to engineering entirely, or
+obviously broken/placeholder submissions.`;
+
+  const result = await callGemini(prompt, 0.2);
+  const match = result.match(/\{[\s\S]*\}/);
+  if (!match) {
+    throw new Error("Gemini did not return valid JSON.");
+  }
+
+  const parsed = JSON.parse(match[0]);
+  const domains = Array.isArray(parsed.domains)
+    ? parsed.domains.filter((d: string) => VALID_DOMAINS.includes(d))
+    : [];
+
+  return {
+    relevant: Boolean(parsed.relevant) && domains.length > 0,
+    domains,
+    resource_type: VALID_TYPES.includes(parsed.resource_type) ? parsed.resource_type : "reference",
+    description: typeof parsed.description === "string" ? parsed.description : userDescription,
+    reason: typeof parsed.reason === "string" ? parsed.reason : undefined,
+  };
+}

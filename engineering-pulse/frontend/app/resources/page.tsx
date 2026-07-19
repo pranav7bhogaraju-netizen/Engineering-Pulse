@@ -12,6 +12,7 @@ interface Resource {
   url: string;
   description: string;
   resource_type: string;
+  source: string;
   domains: string[];
   vote_count: string;
   user_voted: boolean;
@@ -76,9 +77,18 @@ function ResourcesContent() {
             Curated courses, references, and cheat sheets — free and verified, organized by
             domain.
           </p>
-          <p className="font-mono text-xs text-paper-dim/70 mb-8">
+          <p className="font-mono text-xs text-paper-dim/70 mb-4">
             ▲ Upvotes move a resource higher on this page · ☆ Saves add it to your Study List
           </p>
+
+          {status === "authenticated" && (
+            <Link
+              href="/resources/submit"
+              className="inline-block mb-8 font-mono text-xs uppercase tracking-wide text-copper-bright hover:underline"
+            >
+              + Submit a Resource
+            </Link>
+          )}
 
           <div className="mb-8">
             <DomainFilter active={domain} onChange={setDomain} />
@@ -98,7 +108,14 @@ function ResourcesContent() {
                   className="border border-paper-dim/20 rounded-sm p-5 hover:border-copper/50 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-3 font-mono text-[11px] uppercase tracking-wider">
-                    <span className="text-pcb">{TYPE_LABELS[r.resource_type] ?? r.resource_type}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-pcb">{TYPE_LABELS[r.resource_type] ?? r.resource_type}</span>
+                      {r.source === "community" && (
+                        <span className="px-1.5 py-0.5 border border-copper/40 text-copper-bright rounded-sm text-[10px]">
+                          Community
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-1">
                       {r.domains.map((slug) => (
                         <span key={slug} className="text-paper-dim">
