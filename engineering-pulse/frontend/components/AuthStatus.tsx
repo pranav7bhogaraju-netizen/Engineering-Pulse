@@ -18,6 +18,7 @@ export default function AuthStatus() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,6 +31,20 @@ export default function AuthStatus() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fetch the actual saved profile picture (set on /profile) — without
+  // this, the avatar can only ever show initials, since next-auth's own
+  // session object doesn't know about our custom profile_image field.
+  useEffect(() => {
+    if (status !== "authenticated") {
+      setProfileImage(null);
+      return;
+    }
+    fetch("/api/profile")
+      .then((res) => res.json())
+      .then((data) => setProfileImage(data.profile?.profile_image ?? null))
+      .catch(() => setProfileImage(null));
+  }, [status]);
+
   if (status === "loading") {
     return <div className="w-7 h-7" />; // reserve space, avoid layout shift
   }
@@ -41,9 +56,14 @@ export default function AuthStatus() {
         <button
           onClick={() => setOpen((v) => !v)}
           title={session.user?.name ?? session.user?.email ?? undefined}
-          className="w-7 h-7 flex items-center justify-center rounded-full bg-copper text-ink font-mono text-[11px] font-medium hover:bg-copper-bright transition-colors"
+          className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-copper text-ink font-mono text-[11px] font-medium hover:bg-copper-bright transition-colors"
         >
-          {initials}
+          {profileImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={profileImage} alt="" className="w-full h-full object-cover" />
+          ) : (
+            initials
+          )}
         </button>
 
         {open && (
