@@ -68,6 +68,13 @@ export default function NavPanel() {
               }`}
             >
               <div className="py-2 pl-4 flex flex-col gap-1 normal-case tracking-normal text-xs">
+                <Link
+                  href="/resources/submit"
+                  onClick={close}
+                  className="py-1.5 text-copper-bright hover:underline transition-colors border-b border-paper-dim/10 mb-1 pb-2.5"
+                >
+                  + Submit a Resource
+                </Link>
                 {DOMAINS.map((d) => (
                   <Link
                     key={d.slug}
