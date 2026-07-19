@@ -18,6 +18,13 @@ interface ChatMessage {
   imageDataUrl?: string;
 }
 
+const GENERATING_MESSAGES = [
+  "Your masterpiece is at work...",
+  "Mixing colors...",
+  "Sketching the shapes...",
+  "Adding the finishing touches...",
+];
+
 export default function ProfilePage() {
   const { status } = useSession();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -33,6 +40,21 @@ export default function ProfilePage() {
   const [chatPrompt, setChatPrompt] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [generatingMessage, setGeneratingMessage] = useState(GENERATING_MESSAGES[0]);
+
+  // Cycles through a few different status lines while waiting, so it
+  // doesn't feel stuck on one static phrase for what might be several
+  // seconds.
+  useEffect(() => {
+    if (!generating) return;
+    let i = 0;
+    setGeneratingMessage(GENERATING_MESSAGES[0]);
+    const interval = setInterval(() => {
+      i = (i + 1) % GENERATING_MESSAGES.length;
+      setGeneratingMessage(GENERATING_MESSAGES[i]);
+    }, 1800);
+    return () => clearInterval(interval);
+  }, [generating]);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -266,6 +288,18 @@ export default function ProfilePage() {
                     )}
                   </div>
                 ))}
+                {generating && (
+                  <div className="text-left">
+                    <p className="inline-flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-mono bg-ink border border-paper-dim/20 text-paper-dim">
+                      <span>{generatingMessage}</span>
+                      <span className="inline-flex gap-0.5">
+                        <span className="w-1 h-1 rounded-full bg-copper-bright animate-bounce [animation-delay:-0.3s]" />
+                        <span className="w-1 h-1 rounded-full bg-copper-bright animate-bounce [animation-delay:-0.15s]" />
+                        <span className="w-1 h-1 rounded-full bg-copper-bright animate-bounce" />
+                      </span>
+                    </p>
+                  </div>
+                )}
               </div>
 
               {pendingImage && (
