@@ -115,6 +115,14 @@ export default function NavPanel() {
             </Link>
 
             <Link
+              href="/projects"
+              onClick={close}
+              className="block py-3 text-paper hover:text-copper-bright transition-colors border-b border-paper-dim/10"
+            >
+              Projects
+            </Link>
+
+            <Link
               href="/blogs"
               onClick={close}
               className="block py-3 text-paper hover:text-copper-bright transition-colors border-b border-paper-dim/10"
