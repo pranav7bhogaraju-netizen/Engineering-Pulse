@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
   const query = `
     SELECT
-      p.id, p.title, p.summary, p.difficulty, p.source_url, p.source_name,
+      p.id, p.title, p.summary, p.difficulty, p.level, p.source_url, p.source_name,
       COALESCE(array_agg(DISTINCT pd.domain_slug) FILTER (WHERE pd.domain_slug IS NOT NULL), '{}') AS domains,
       COUNT(DISTINCT pv.user_id) AS vote_count,
       EXISTS(
