@@ -10,10 +10,12 @@ export default function NavPanel() {
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
   const [open, setOpen] = useState(false);
   const [resourcesExpanded, setResourcesExpanded] = useState(false);
+  const [projectsExpanded, setProjectsExpanded] = useState(false);
 
   function close() {
     setOpen(false);
     setResourcesExpanded(false);
+    setProjectsExpanded(false);
   }
 
   return (
@@ -114,13 +116,57 @@ export default function NavPanel() {
               Study List
             </Link>
 
-            <Link
-              href="/projects"
-              onClick={close}
-              className="block py-3 text-paper hover:text-copper-bright transition-colors border-b border-paper-dim/10"
+            <button
+              onClick={() => setProjectsExpanded((v) => !v)}
+              className="w-full flex items-center justify-between py-3 text-paper hover:text-copper-bright transition-colors border-b border-paper-dim/10"
             >
               Projects
-            </Link>
+              <span
+                className={`transition-transform duration-200 ${projectsExpanded ? "rotate-180" : ""}`}
+              >
+                ▾
+              </span>
+            </button>
+
+            <div
+              className={`overflow-hidden transition-[max-height] duration-300 ease-out ${
+                projectsExpanded ? "max-h-[32rem]" : "max-h-0"
+              }`}
+            >
+              <div className="py-2 pl-4 flex flex-col gap-1 normal-case tracking-normal text-xs">
+                <Link
+                  href="/projects/submit"
+                  onClick={close}
+                  className="py-1.5 text-copper-bright hover:underline transition-colors"
+                >
+                  + Submit a Project
+                </Link>
+                <Link
+                  href="/projects"
+                  onClick={close}
+                  className="py-1.5 text-paper-dim hover:text-copper-bright transition-colors"
+                >
+                  All Projects
+                </Link>
+                <Link
+                  href="/projects?view=saved"
+                  onClick={close}
+                  className="py-1.5 text-paper-dim hover:text-copper-bright transition-colors border-b border-paper-dim/10 mb-1 pb-2.5"
+                >
+                  Saved Projects
+                </Link>
+                {DOMAINS.map((d) => (
+                  <Link
+                    key={d.slug}
+                    href={`/projects?domain=${d.slug}`}
+                    onClick={close}
+                    className="py-1.5 text-paper-dim hover:text-copper-bright transition-colors"
+                  >
+                    {d.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
 
             <Link
               href="/blogs"

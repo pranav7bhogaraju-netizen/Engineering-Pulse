@@ -44,7 +44,7 @@ function ProjectsContent() {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
-  const [tab, setTab] = useState<Tab>("all");
+  const [tab, setTab] = useState<Tab>(searchParams.get("view") === "saved" ? "saved" : "all");
   const [domain, setDomain] = useState(searchParams.get("domain") ?? "all");
   const [sortDir, setSortDir] = useState<"easiest" | "hardest">("easiest");
   const [levelFilter, setLevelFilter] = useState<LevelFilter>("all");
@@ -67,6 +67,13 @@ function ProjectsContent() {
       .then((data) => setProjects(data.projects ?? []))
       .finally(() => setLoading(false));
   }
+
+  // Keep the view in sync with the URL so the nav dropdown links
+  // (?view=saved, ?domain=...) work even when already on this page.
+  useEffect(() => {
+    setTab(searchParams.get("view") === "saved" ? "saved" : "all");
+    setDomain(searchParams.get("domain") ?? "all");
+  }, [searchParams]);
 
   useEffect(() => {
     load();
