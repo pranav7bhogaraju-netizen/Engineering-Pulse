@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
 
-  const conditions: string[] = [];
+  const conditions: string[] = ["p.status = 'published'"];
   const values: string[] = [];
   if (domain && domain !== "all") {
     values.push(domain);

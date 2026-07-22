@@ -11,6 +11,7 @@ interface Project {
   title: string;
   summary: string;
   difficulty: string;
+  level: string | null;
   source_url: string | null;
   source_name: string | null;
   domains: string[];
@@ -31,14 +32,22 @@ const DIFFICULTY_RANK: Record<string, number> = {
   advanced: 2,
 };
 
+const LEVEL_LABELS: Record<string, string> = {
+  fair: "Fair-Level",
+  collegiate: "Collegiate",
+};
+
 type Tab = "all" | "saved";
+type LevelFilter = "all" | "fair" | "collegiate";
 
 function ProjectsContent() {
   const searchParams = useSearchParams();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
   const [tab, setTab] = useState<Tab>("all");
   const [domain, setDomain] = useState(searchParams.get("domain") ?? "all");
   const [sortDir, setSortDir] = useState<"easiest" | "hardest">("easiest");
+  const [levelFilter, setLevelFilter] = useState<LevelFilter>("all");
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,7 +85,11 @@ function ProjectsContent() {
     load();
   }
 
-  const sortedProjects = [...projects].sort((a, b) => {
+  const visibleProjects = projects.filter(
+    (p) => levelFilter === "all" || p.level === levelFilter
+  );
+
+  const sortedProjects = [...visibleProjects].sort((a, b) => {
     const diff =
       (DIFFICULTY_RANK[a.difficulty] ?? 1) - (DIFFICULTY_RANK[b.difficulty] ?? 1);
     const byDifficulty = sortDir === "easiest" ? diff : -diff;
@@ -101,9 +114,20 @@ function ProjectsContent() {
             Hand-picked, verified engineering builds — click through to the full guide at the
             source, organized by domain and difficulty.
           </p>
-          <p className="font-mono text-xs text-paper-dim/70 mb-6">
+          <p className="font-mono text-xs text-paper-dim/70 mb-4">
             ▲ Upvotes surface the best builds · ☆ Saves add a project to your Saved tab
           </p>
+
+          <div className="flex items-center gap-4 mb-6 font-mono text-xs">
+            <Link href="/projects/submit" className="text-copper-bright hover:underline">
+              + Submit a project
+            </Link>
+            {isAdmin && (
+              <Link href="/admin/projects" className="text-paper-dim hover:text-copper-bright transition-colors">
+                Review pending →
+              </Link>
+            )}
+          </div>
 
           {/* Tabs */}
           <div className="flex items-center gap-6 mb-8 font-mono text-xs uppercase tracking-widest">
@@ -136,7 +160,22 @@ function ProjectsContent() {
             </div>
           )}
 
-          <div className="flex items-center justify-end mb-8">
+          <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+            <div className="flex items-center gap-4 font-mono text-[11px] uppercase tracking-wider">
+              {(["all", "fair", "collegiate"] as const).map((lv) => (
+                <button
+                  key={lv}
+                  onClick={() => setLevelFilter(lv)}
+                  className={`transition-colors ${
+                    levelFilter === lv
+                      ? "text-copper-bright"
+                      : "text-paper-dim hover:text-copper-bright"
+                  }`}
+                >
+                  {lv === "all" ? "All Levels" : LEVEL_LABELS[lv]}
+                </button>
+              ))}
+            </div>
             <button
               onClick={() => setSortDir((d) => (d === "easiest" ? "hardest" : "easiest"))}
               className="font-mono text-[11px] uppercase tracking-wider text-paper-dim hover:text-copper-bright transition-colors"
@@ -168,9 +207,16 @@ function ProjectsContent() {
                   className="border border-paper-dim/20 rounded-sm p-5 hover:border-copper/50 transition-colors flex flex-col"
                 >
                   <div className="flex items-center justify-between mb-3 font-mono text-[11px] uppercase tracking-wider">
-                    <span className={DIFFICULTY_COLORS[p.difficulty] ?? "text-paper-dim"}>
-                      {p.difficulty}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={DIFFICULTY_COLORS[p.difficulty] ?? "text-paper-dim"}>
+                        {p.difficulty}
+                      </span>
+                      {p.level && (
+                        <span className="px-1.5 py-0.5 border border-copper/40 rounded-sm text-[10px] text-copper-bright normal-case">
+                          {LEVEL_LABELS[p.level] ?? p.level}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-1">
                       {p.domains.map((slug) => (
                         <span key={slug} className="text-paper-dim">

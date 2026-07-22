@@ -37,3 +37,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   return NextResponse.json({ project: result.rows[0] });
 }
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
+  if (!isAdmin) {
+    return NextResponse.json({ error: "Admin access required." }, { status: 403 });
+  }
+
+  await getPool().query("DELETE FROM projects WHERE id = $1", [params.id]);
+  return NextResponse.json({ success: true });
+}
