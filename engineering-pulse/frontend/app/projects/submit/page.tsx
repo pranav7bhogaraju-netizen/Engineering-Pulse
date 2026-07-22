@@ -27,7 +27,8 @@ export default function SubmitProject() {
   const [domains, setDomains] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
+  const [reviewedDomains, setReviewedDomains] = useState<string[] | null>(null);
+  const [queuedMessage, setQueuedMessage] = useState<string | null>(null);
 
   function toggleDomain(slug: string) {
     setDomains((prev) => (prev.includes(slug) ? prev.filter((d) => d !== slug) : [...prev, slug]));
@@ -50,7 +51,11 @@ export default function SubmitProject() {
       setSubmitting(false);
       return;
     }
-    setDone(true);
+    if (data.queued) {
+      setQueuedMessage(data.message);
+    } else {
+      setReviewedDomains(data.domains ?? []);
+    }
     setSubmitting(false);
   }
 
@@ -69,26 +74,46 @@ export default function SubmitProject() {
     );
   }
 
-  if (done) {
+  if (queuedMessage) {
     return (
       <main className="min-h-screen flex items-center justify-center px-6">
         <div className="max-w-sm text-center">
           <p className="font-mono text-xs uppercase tracking-widest text-copper-bright mb-3">
-            ⏳ Submitted for review
+            ⏳ Queued for review
+          </p>
+          <p className="text-paper-dim mb-6">{queuedMessage}</p>
+          <button
+            onClick={() => router.push("/projects")}
+            className="px-4 py-2 bg-copper text-ink rounded-sm font-mono text-sm hover:bg-copper-bright transition-colors"
+          >
+            Back to Projects
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (reviewedDomains) {
+    return (
+      <main className="min-h-screen flex items-center justify-center px-6">
+        <div className="max-w-sm text-center">
+          <p className="font-mono text-xs uppercase tracking-widest text-pcb mb-3">
+            ✓ Approved and live
           </p>
           <p className="text-paper-dim mb-6">
-            Thanks! Your project has been queued for review and will appear once an admin approves it.
+            Your project passed AI review and is now live, tagged under{" "}
+            {reviewedDomains.map((d) => d.toUpperCase()).join(", ")}.
           </p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => router.push("/projects")}
               className="px-4 py-2 bg-copper text-ink rounded-sm font-mono text-sm hover:bg-copper-bright transition-colors"
             >
-              Back to Projects
+              View Projects
             </button>
             <button
               onClick={() => {
-                setDone(false);
+                setReviewedDomains(null);
                 setTitle("");
                 setSourceUrl("");
                 setSummary("");
@@ -116,8 +141,10 @@ export default function SubmitProject() {
 
         <h1 className="font-display font-bold text-2xl mb-2">Submit a Project</h1>
         <p className="text-sm text-paper-dim mb-8">
-          Share a hands-on build with a link to the full guide. Submissions are reviewed by an admin
-          before going live, so genuinely off-topic or spam entries won&apos;t appear.
+          Share a hands-on build with a link to the full guide. An AI reviewer checks it&apos;s a
+          genuine, on-topic engineering project and tags it automatically — no waiting on manual
+          approval, but off-topic or mislabeled submissions will be declined. Your difficulty,
+          level, and domain picks are used as a fallback if the reviewer is momentarily busy.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

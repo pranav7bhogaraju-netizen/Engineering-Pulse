@@ -111,6 +111,15 @@ export interface ResourceClassification {
   reason?: string;
 }
 
+export interface ProjectClassification {
+  relevant: boolean;
+  domains: string[];
+  difficulty: string;
+  level: string;
+  summary: string;
+  reason?: string;
+}
+
 interface FetchedPageInfo {
   title: string | null;
   description: string | null;
@@ -237,6 +246,82 @@ regardless of whether the real content happens to be spam or not.`;
     domains,
     resource_type: VALID_TYPES.includes(parsed.resource_type) ? parsed.resource_type : "reference",
     description: typeof parsed.description === "string" ? parsed.description : userDescription,
+    reason: typeof parsed.reason === "string" ? parsed.reason : undefined,
+  };
+}
+
+const VALID_DIFFICULTY = ["beginner", "intermediate", "advanced"];
+const VALID_LEVEL = ["fair", "collegiate"];
+
+export async function classifyProjectSubmission(
+  title: string,
+  url: string,
+  userSummary: string
+): Promise<ProjectClassification> {
+  const page = await fetchPageInfo(url);
+
+  const verificationBlock = page.fetchFailed
+    ? `Could not fetch the actual page content (it may block bots, require
+login, or be a heavy JS app with no server-rendered content). Since you
+can't verify the claim against real content, be MORE skeptical than usual
+— only approve if the title/URL/summary combination is genuinely plausible
+and internally consistent as a hands-on engineering build, with no red flags.`
+    : `Here's what was ACTUALLY found at that URL — use this to verify the
+user's claim, don't just trust their title:
+Actual page title: ${page.title || "(none found)"}
+Actual page description: ${page.description || "(none found)"}
+Actual page text sample: ${page.textSample || "(none found)"}
+
+If the user's claimed title/summary doesn't genuinely match what's actually
+on the page, this is a MISMATCH and must be rejected — this is the single
+most important check. The page should be an actual buildable project / how-to
+guide, not an unrelated article, product listing, or sports/entertainment page.`;
+
+  const prompt = `You are reviewing a user-submitted PROJECT for an
+engineering education site. Projects are hands-on builds that link out to a
+full guide at the source. Evaluate whether it's a genuine, relevant,
+buildable engineering project (not spam, not off-topic, not a
+broken/placeholder link, and NOT mislabeled/deceptive).
+
+User's claimed title: ${title}
+URL: ${url}
+User's claimed summary: ${userSummary || "(none provided)"}
+
+${verificationBlock}
+
+Respond with ONLY a JSON object, no markdown fences, no other text:
+{
+  "relevant": true or false,
+  "domains": [array of applicable slugs from: ${VALID_DOMAINS.join(", ")} — empty array if not relevant],
+  "difficulty": one of ${VALID_DIFFICULTY.join(", ")} (best guess at build complexity),
+  "level": one of ${VALID_LEVEL.join(", ")} — "fair" for school / science-fair level builds, "collegiate" for university / advanced builds,
+  "summary": a clear 1-sentence summary based on the ACTUAL content (use the user's if it's accurate, otherwise write one based on the real page),
+  "reason": if relevant is false, a specific reason why (e.g. "title claims an Arduino robot, but the actual page is a product listing")
+}
+
+Be reasonably permissive for genuine, accurately-described buildable
+projects — err toward "relevant: true" for anything that's plausibly a
+hands-on engineering build, even if niche. But be strict about mismatches
+between what's claimed and what's actually there, and reject pages that
+aren't actually a project/build guide at all.`;
+
+  const result = await callGemini(prompt, 0.2, resolveKey(process.env.GEMINI_API_KEY_REVIEW));
+  const match = result.match(/\{[\s\S]*\}/);
+  if (!match) {
+    throw new Error("Gemini did not return valid JSON.");
+  }
+
+  const parsed = JSON.parse(match[0]);
+  const domains = Array.isArray(parsed.domains)
+    ? parsed.domains.filter((d: string) => VALID_DOMAINS.includes(d))
+    : [];
+
+  return {
+    relevant: Boolean(parsed.relevant) && domains.length > 0,
+    domains,
+    difficulty: VALID_DIFFICULTY.includes(parsed.difficulty) ? parsed.difficulty : "intermediate",
+    level: VALID_LEVEL.includes(parsed.level) ? parsed.level : "collegiate",
+    summary: typeof parsed.summary === "string" ? parsed.summary : userSummary,
     reason: typeof parsed.reason === "string" ? parsed.reason : undefined,
   };
 }
